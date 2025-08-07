@@ -12,9 +12,26 @@
 #import "../../core/SeatCraftCoreApp.hpp"
 #import "./renderer/IOSSeatCraftCoreRenderer.h"
 
-@interface KKSeatCraftCoreView () <KKSeatCraftCoreBackendViewDelegate, UIGestureRecognizerDelegate>
+#define USE_SCROLL_VIEW 0
+
+@interface KKSeatCraftCoreAuxiliaryScrollView : UIScrollView
+@property (nonatomic, strong, nullable) void (^didLayoutSubviews)(KKSeatCraftCoreAuxiliaryScrollView *scrollView);
+@end
+
+@implementation KKSeatCraftCoreAuxiliaryScrollView
+
+- (void)layoutSubviews {
+    [super layoutSubviews];
+    if (self.didLayoutSubviews) {
+        self.didLayoutSubviews(self);
+    }
+}
+
+@end
+
+@interface KKSeatCraftCoreView () <KKSeatCraftCoreBackendViewDelegate, UIGestureRecognizerDelegate, UIScrollViewDelegate>
 @property (nonatomic, strong) KKSeatCraftCoreBackendView *backendView;
-@property (nonatomic, strong) UIScrollView *scrollView;
+@property (nonatomic, strong) KKSeatCraftCoreAuxiliaryScrollView *scrollView;
 @property (nonatomic, strong) UIView *zoomContentView;
 
 @property (nonatomic, assign) CGFloat minimumZoomScale;
@@ -34,8 +51,8 @@
 @end
 
 @implementation KKSeatCraftCoreView {
-    std::unique_ptr<kk::SeatCraftCoreApp> app;
-    std::shared_ptr<kk::renderer::IOSSeatCraftCoreRenderer> renderer;
+    std::unique_ptr<kk::SeatCraftCoreApp> _app;
+    std::shared_ptr<kk::renderer::IOSSeatCraftCoreRenderer> _renderer;
 }
 
 - (void)dealloc {
@@ -85,10 +102,14 @@
     self.pinchCenter = CGPointZero;
     self.isTapEnabled = true;
 
-    app = std::make_unique<kk::SeatCraftCoreApp>();
+    _app = std::make_unique<kk::SeatCraftCoreApp>();
 
     [self setupViews];
+#if USE_SCROLL_VIEW
+
+#else
     [self setupGesture];
+#endif
 }
 
 - (void)setupViews {
@@ -97,6 +118,25 @@
     _backendView.contentScaleFactor = UIScreen.mainScreen.scale;
     _backendView.delegate = self;
 
+#if USE_SCROLL_VIEW
+
+    _scrollView = [[KKSeatCraftCoreAuxiliaryScrollView alloc] initWithFrame:self.bounds];
+    _scrollView.translatesAutoresizingMaskIntoConstraints = NO;
+    _scrollView.delegate = self;
+    __weak typeof(self) weakSelf = self;
+    _scrollView.didLayoutSubviews = ^(KKSeatCraftCoreAuxiliaryScrollView *scrollView) {
+        [weakSelf onScrollViewLayoutSubviews];
+    };
+
+    _zoomContentView = [[UIView alloc] initWithFrame:self.bounds];
+    _zoomContentView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+
+    [self addSubview:_scrollView];
+    [_scrollView addSubview:_zoomContentView];
+    [self addGestureRecognizer:_scrollView.panGestureRecognizer];
+
+#endif
+
     [self addSubview:_backendView];
 
     [NSLayoutConstraint activateConstraints:@[
@@ -104,6 +144,12 @@
         [_backendView.topAnchor constraintEqualToAnchor:self.topAnchor],
         [_backendView.trailingAnchor constraintEqualToAnchor:self.trailingAnchor],
         [_backendView.bottomAnchor constraintEqualToAnchor:self.bottomAnchor],
+#if USE_SCROLL_VIEW
+        [_scrollView.leadingAnchor constraintEqualToAnchor:self.leadingAnchor],
+        [_scrollView.topAnchor constraintEqualToAnchor:self.topAnchor],
+        [_scrollView.trailingAnchor constraintEqualToAnchor:self.trailingAnchor],
+        [_scrollView.bottomAnchor constraintEqualToAnchor:self.bottomAnchor],
+#endif
     ]];
 }
 
@@ -206,26 +252,40 @@
 }
 
 - (void)update:(CADisplayLink *)displayLink {
-    if (renderer == nullptr) {
-        renderer = std::make_shared<kk::renderer::IOSSeatCraftCoreRenderer>(app.get(), (CAEAGLLayer *)self.backendView.layer);
+    if (_renderer == nullptr) {
+        _renderer = std::make_shared<kk::renderer::IOSSeatCraftCoreRenderer>(_app.get(), (CAEAGLLayer *)self.backendView.layer);
     }
 
-    if (renderer == nullptr) {
+    if (_renderer == nullptr) {
         return;
     }
 
-    renderer->draw();
+    _renderer->draw();
 }
 
 - (void)updateZoom:(CGFloat)zoomScale contentOffset:(CGPoint)contentOffset {
-    if (app == nullptr) {
+    if (_app == nullptr) {
         return;
     }
 
-    auto changed = app->updateZoomAndOffset(zoomScale, tgfx::Point(contentOffset.x, contentOffset.y));
-    if (changed && renderer) {
-        renderer->invalidateContent();
+    auto changed = _app->updateZoomAndOffset(zoomScale, tgfx::Point(contentOffset.x, contentOffset.y));
+    if (changed && _renderer) {
+        _renderer->invalidateContent();
     }
+}
+
+- (void)onScrollViewLayoutSubviews {
+
+    CGFloat zoomScale = self.scrollView.zoomScale;
+    CGFloat contentScaleFactor = self.backendView.contentScaleFactor;
+    CGPoint contentOffset = self.scrollView.contentOffset;
+    contentOffset.x *= contentScaleFactor;
+    contentOffset.y *= contentScaleFactor;
+
+    contentOffset.x = -contentOffset.x;
+    contentOffset.y = -contentOffset.y;
+
+    [self updateZoom:zoomScale contentOffset:contentOffset];
 }
 
 - (void)updateMaxMinZoomScalesForCurrentBounds {
@@ -246,7 +306,19 @@
     self.maximumZoomScale = maxScale;
     self.zoomScale = minScale;
 
+#if USE_SCROLL_VIEW
+    self.scrollView.minimumZoomScale = minScale;
+    self.scrollView.maximumZoomScale = maxScale;
+    self.scrollView.zoomScale = minScale;
+
+    if (self.scrollView.pinchGestureRecognizer && ![self.gestureRecognizers containsObject:self.scrollView.pinchGestureRecognizer]) {
+        [self addGestureRecognizer:self.scrollView.pinchGestureRecognizer];
+    }
+
+#else
+
     [self updateZoom:self.zoomScale contentOffset:self.contentOffset];
+#endif
 }
 
 - (void)configureWithSize:(CGSize)size {
@@ -267,14 +339,19 @@
     CALayer *layer = backendView.layer;
     auto width = static_cast<int>(roundf(layer.bounds.size.width * layer.contentsScale));
     auto height = static_cast<int>(roundf(layer.bounds.size.height * layer.contentsScale));
-    auto sizeChanged = app->updateScreen(width, height, layer.contentsScale);
-    if (sizeChanged && renderer) {
-        renderer->updateSize();
+    auto sizeChanged = _app->updateScreen(width, height, layer.contentsScale);
+    if (sizeChanged && _renderer) {
+        _renderer->updateSize();
     }
 }
 
 #pragma mark - UIGestureRecognizerDelegate
 - (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer {
     return YES;
+}
+
+#pragma mark - UIScrollViewDelegate
+- (nullable UIView *)viewForZoomingInScrollView:(UIScrollView *)scrollView {
+    return self.zoomContentView;
 }
 @end
