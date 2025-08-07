@@ -21,6 +21,7 @@ class SeatCraftCoreApp;
 namespace kk::drawers {
 class GridBackgroundDrawer;
 class ConicGradientDrawer;
+class SeatMinimapDrawer;
 };  // namespace kk::drawers
 
 namespace kk::renderer {
@@ -44,6 +45,7 @@ class SeatCraftCoreRenderer {
     bool invalidate;
     std::unique_ptr<kk::drawers::GridBackgroundDrawer> gridBackground;
     std::unique_ptr<kk::drawers::ConicGradientDrawer> conicGradient;
+    std::unique_ptr<kk::drawers::SeatMinimapDrawer> minimap;
 };
 };  // namespace kk::renderer
 

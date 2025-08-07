@@ -16,6 +16,7 @@
 
 #include "../drawers/ConicGradientDrawer.hpp"
 #include "../drawers/GridBackgroundDrawer.hpp"
+#include "../drawers/SeatMinimapDrawer.hpp"
 
 namespace kk::renderer {
 SeatCraftCoreRenderer::SeatCraftCoreRenderer(const kk::SeatCraftCoreApp *app)
@@ -23,7 +24,8 @@ SeatCraftCoreRenderer::SeatCraftCoreRenderer(const kk::SeatCraftCoreApp *app)
     , window(nullptr)
     , invalidate(true)
     , gridBackground(std::make_unique<kk::drawers::GridBackgroundDrawer>())
-    , conicGradient(std::make_unique<kk::drawers::ConicGradientDrawer>()) {
+    , conicGradient(std::make_unique<kk::drawers::ConicGradientDrawer>())
+    , minimap(std::make_unique<kk::drawers::SeatMinimapDrawer>()) {
 }
 
 SeatCraftCoreRenderer::~SeatCraftCoreRenderer() {
@@ -70,8 +72,11 @@ void SeatCraftCoreRenderer::draw() {
 
     auto canvas = surface->getCanvas();
     canvas->clear();
+    
     gridBackground->draw(canvas, app);
     conicGradient->draw(canvas, app);
+    minimap->draw(canvas, app);
+    
     context->flushAndSubmit();
     window->present(context);
 
