@@ -10,7 +10,9 @@
 #import "KKSeatCraftCoreBackendView.h"
 
 #import "../../core/SeatCraftCoreApp.hpp"
-#import "./renderer/IOSSeatCraftCoreRenderer.h"
+#import "../../core/renderer/SeatCraftCoreRenderer.hpp"
+
+#import "./renderer/IOSRendererBackend.h"
 
 #define USE_SCROLL_VIEW 0
 
@@ -51,8 +53,8 @@
 @end
 
 @implementation KKSeatCraftCoreView {
-    std::unique_ptr<kk::SeatCraftCoreApp> _app;
-    std::shared_ptr<kk::renderer::IOSSeatCraftCoreRenderer> _renderer;
+    std::shared_ptr<kk::SeatCraftCoreApp> _app;
+    std::shared_ptr<kk::renderer::SeatCraftCoreRenderer> _renderer;
 }
 
 - (void)dealloc {
@@ -102,7 +104,7 @@
     self.pinchCenter = CGPointZero;
     self.isTapEnabled = true;
 
-    _app = std::make_unique<kk::SeatCraftCoreApp>();
+    _app = std::make_shared<kk::SeatCraftCoreApp>();
 
     [self setupViews];
 #if USE_SCROLL_VIEW
@@ -253,7 +255,8 @@
 
 - (void)update:(CADisplayLink *)displayLink {
     if (_renderer == nullptr) {
-        _renderer = std::make_shared<kk::renderer::IOSSeatCraftCoreRenderer>(_app.get(), (CAEAGLLayer *)self.backendView.layer);
+        auto backend = std::make_unique<kk::renderer::IOSRendererBackend>((CAEAGLLayer *)self.backendView.layer);
+        _renderer = std::make_shared<kk::renderer::SeatCraftCoreRenderer>(_app, std::move(backend));
     }
 
     if (_renderer == nullptr) {
@@ -336,11 +339,7 @@
 
 #pragma mark - KKSeatCraftCoreBackendViewDelegate
 - (void)seatCraftCoreBackendViewDidUpdateSize:(KKSeatCraftCoreBackendView *)backendView {
-    CALayer *layer = backendView.layer;
-    auto width = static_cast<int>(roundf(layer.bounds.size.width * layer.contentsScale));
-    auto height = static_cast<int>(roundf(layer.bounds.size.height * layer.contentsScale));
-    auto sizeChanged = _app->updateScreen(width, height, layer.contentsScale);
-    if (sizeChanged && _renderer) {
+    if (_renderer) {
         _renderer->updateSize();
     }
 }

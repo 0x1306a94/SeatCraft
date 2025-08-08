@@ -21,13 +21,13 @@ static std::shared_ptr<tgfx::Layer> CreateMinimapBackground(const kk::SeatCraftC
     auto density = app->density();
     auto width = 140.0f * density;
     auto height = 140.0f * density;
-//    auto cornerRadius = 10.0f * density;
+    //    auto cornerRadius = 10.0f * density;
     auto background = tgfx::ShapeLayer::Make();
     tgfx::Rect displayRect = tgfx::Rect::MakeWH(width, height);
     auto backPath = tgfx::Path();
     //    backPath.addRoundRect(displayRect, cornerRadius, cornerRadius);
     backPath.addRect(displayRect);
-    background->setFillStyle(tgfx::SolidColor::Make(tgfx::Color::FromRGBA(0, 0, 0, 153)));
+    background->setFillStyle(tgfx::SolidColor::Make(tgfx::Color{0.0f, 0.0f, 0.0f, 0.6f}));
     background->setPath(backPath);
     return background;
 }
@@ -39,6 +39,7 @@ SeatMinimapDrawer::SeatMinimapDrawer()
 }
 
 SeatMinimapDrawer::~SeatMinimapDrawer() {
+    tgfx::PrintLog("SeatMinimapDrawer::~SeatMinimapDrawer");
 }
 
 std::shared_ptr<tgfx::Layer> SeatMinimapDrawer::buildLayerTree(const kk::SeatCraftCoreApp *app) {

@@ -25,23 +25,22 @@ class SeatMinimapDrawer;
 };  // namespace kk::drawers
 
 namespace kk::renderer {
+class RendererBackend;
 class SeatCraftCoreRenderer {
   public:
-    explicit SeatCraftCoreRenderer(const kk::SeatCraftCoreApp *app);
+    explicit SeatCraftCoreRenderer(std::shared_ptr<kk::SeatCraftCoreApp> app, std::unique_ptr<RendererBackend> backend);
 
     virtual ~SeatCraftCoreRenderer();
-
-    virtual void initWindow();
 
     virtual void updateSize();
 
     virtual void invalidateContent();
 
-    virtual void draw();
+    virtual void draw(bool force = false);
 
   protected:
-    const kk::SeatCraftCoreApp *app;
-    std::shared_ptr<tgfx::Window> window;
+    std::shared_ptr<kk::SeatCraftCoreApp> app;
+    std::unique_ptr<RendererBackend> backend;
     bool invalidate;
     std::unique_ptr<kk::drawers::GridBackgroundDrawer> gridBackground;
     std::unique_ptr<kk::drawers::ConicGradientDrawer> conicGradient;

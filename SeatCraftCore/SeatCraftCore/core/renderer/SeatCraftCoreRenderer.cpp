@@ -11,6 +11,9 @@
 #include <tgfx/core/Surface.h>
 #include <tgfx/gpu/Device.h>
 #include <tgfx/gpu/Window.h>
+#include <tgfx/platform/Print.h>
+
+#include "RendererBackend.hpp"
 
 #include "../SeatCraftCoreApp.hpp"
 
@@ -19,42 +22,49 @@
 #include "../drawers/SeatMinimapDrawer.hpp"
 
 namespace kk::renderer {
-SeatCraftCoreRenderer::SeatCraftCoreRenderer(const kk::SeatCraftCoreApp *app)
+SeatCraftCoreRenderer::SeatCraftCoreRenderer(std::shared_ptr<kk::SeatCraftCoreApp> app, std::unique_ptr<RendererBackend> backend)
     : app(app)
-    , window(nullptr)
+    , backend(std::move(backend))
     , invalidate(true)
     , gridBackground(std::make_unique<kk::drawers::GridBackgroundDrawer>())
     , conicGradient(std::make_unique<kk::drawers::ConicGradientDrawer>())
     , minimap(std::make_unique<kk::drawers::SeatMinimapDrawer>()) {
+
+    updateSize();
 }
 
 SeatCraftCoreRenderer::~SeatCraftCoreRenderer() {
-}
-
-void SeatCraftCoreRenderer::initWindow() {
+    tgfx::PrintLog("SeatCraftCoreRenderer::~SeatCraftCoreRenderer");
 }
 
 void SeatCraftCoreRenderer::updateSize() {
-    if (window) {
-        window->invalidSize();
+    auto window = backend->getWindow();
+    if (window == nullptr) {
+        return;
     }
-    invalidateContent();
+
+    auto width = backend->getWidth();
+    auto height = backend->getHeight();
+    auto density = backend->getDensity();
+    auto sizeChanged = app->updateScreen(width, height, density);
+    if (sizeChanged) {
+        window->invalidSize();
+        invalidateContent();
+    }
 }
 
 void SeatCraftCoreRenderer::invalidateContent() {
     invalidate = true;
 }
 
-void SeatCraftCoreRenderer::draw() {
-    if (window == nullptr) {
-        initWindow();
-    }
+void SeatCraftCoreRenderer::draw(bool force) {
+    auto window = backend->getWindow();
 
     if (window == nullptr) {
         return;
     }
 
-    if (!invalidate) {
+    if (!invalidate && !force) {
         return;
     }
 
@@ -72,11 +82,16 @@ void SeatCraftCoreRenderer::draw() {
 
     auto canvas = surface->getCanvas();
     canvas->clear();
-    
-    gridBackground->draw(canvas, app);
-    conicGradient->draw(canvas, app);
-    minimap->draw(canvas, app);
-    
+    canvas->save();
+
+    auto appPtr = app.get();
+
+    gridBackground->draw(canvas, appPtr);
+    conicGradient->draw(canvas, appPtr);
+    minimap->draw(canvas, appPtr);
+
+    canvas->restore();
+
     context->flushAndSubmit();
     window->present(context);
 
