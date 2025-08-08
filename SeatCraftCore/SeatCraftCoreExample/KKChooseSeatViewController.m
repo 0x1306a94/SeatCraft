@@ -23,7 +23,7 @@
 
 - (void)viewDidAppear:(BOOL)animated {
     [super viewDidAppear:animated];
-    
+
     [self.seatCraftView updateContentSize:CGSizeMake(1000, 843)];
 }
 @end
