@@ -25,5 +25,8 @@
     [super viewDidAppear:animated];
 
     [self.seatCraftView updateContentSize:CGSizeMake(1000, 843)];
+
+    NSString *svgPath = [[NSBundle mainBundle] pathForResource:@"seat_area" ofType:@"svg"];
+    [self.seatCraftView updateAreaSVG:svgPath];
 }
 @end

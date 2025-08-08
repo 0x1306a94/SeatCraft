@@ -17,18 +17,18 @@
 
 #include "../SeatCraftCoreApp.hpp"
 
-#include "../drawers/ConicGradientDrawer.hpp"
 #include "../drawers/GridBackgroundDrawer.hpp"
-#include "../drawers/SeatMinimapDrawer.hpp"
+#include "../drawers/SeatLayerTree.hpp"
+#include "../drawers/SeatMinimapLayerTree.hpp"
 
 namespace kk::renderer {
 SeatCraftCoreRenderer::SeatCraftCoreRenderer(std::shared_ptr<kk::SeatCraftCoreApp> app, std::unique_ptr<RendererBackend> backend)
     : app(app)
     , backend(std::move(backend))
     , invalidate(true)
-    , gridBackground(std::make_unique<kk::drawers::GridBackgroundDrawer>())
-    , conicGradient(std::make_unique<kk::drawers::ConicGradientDrawer>())
-    , minimap(std::make_unique<kk::drawers::SeatMinimapDrawer>()) {
+    , _gridLayer(std::make_unique<kk::drawers::GridBackgroundDrawer>())
+    , _seatLayer(std::make_unique<kk::drawers::SeatLayerTree>())
+    , _minimapLayer(std::make_unique<kk::drawers::SeatMinimapLayerTree>()) {
 
     updateSize();
 }
@@ -46,7 +46,7 @@ void SeatCraftCoreRenderer::updateSize() {
     auto width = backend->getWidth();
     auto height = backend->getHeight();
     auto density = backend->getDensity();
-    auto sizeChanged = app->updateScreen(width, height, density);
+    auto sizeChanged = app->updateScreen(tgfx::Size{static_cast<float>(width), static_cast<float>(height)}, density);
     if (sizeChanged) {
         window->invalidSize();
         invalidateContent();
@@ -64,9 +64,9 @@ void SeatCraftCoreRenderer::draw(bool force) {
         return;
     }
 
-    if (!invalidate && !force) {
-        return;
-    }
+    //    if (!invalidate && !force) {
+    //        return;
+    //    }
 
     auto device = window->getDevice();
     auto context = device->lockContext();
@@ -86,9 +86,11 @@ void SeatCraftCoreRenderer::draw(bool force) {
 
     auto appPtr = app.get();
 
-    gridBackground->draw(canvas, appPtr);
-    conicGradient->draw(canvas, appPtr);
-    minimap->draw(canvas, appPtr);
+    _gridLayer->draw(canvas, appPtr);
+
+    _seatLayer->draw(canvas, appPtr);
+
+    _minimapLayer->draw(canvas, appPtr);
 
     canvas->restore();
 

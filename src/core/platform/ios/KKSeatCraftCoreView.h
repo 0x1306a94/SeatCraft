@@ -11,6 +11,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface KKSeatCraftCoreView : UIView
 - (void)updateContentSize:(CGSize)contentSize;
+- (void)updateAreaSVG:(NSString *)path;
 @end
 
 NS_ASSUME_NONNULL_END

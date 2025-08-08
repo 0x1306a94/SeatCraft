@@ -23,8 +23,9 @@ GridBackgroundDrawer::~GridBackgroundDrawer() {
 }
 
 void GridBackgroundDrawer::onDraw(tgfx::Canvas *canvas, const kk::SeatCraftCoreApp *app) {
-    auto width = app->width();
-    auto height = app->height();
+    auto boundsSize = app->getBoundsSize();
+    auto width = boundsSize.width;
+    auto height = boundsSize.height;
     canvas->clear(tgfx::Color::White());
     tgfx::Paint paint = {};
     paint.setColor(tgfx::Color{0.8f, 0.8f, 0.8f, 1.f});

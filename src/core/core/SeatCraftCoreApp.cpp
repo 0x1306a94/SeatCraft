@@ -9,10 +9,12 @@
 
 #include <tgfx/platform/Print.h>
 
+#include <filesystem>
+
 namespace kk {
-SeatCraftCoreApp::SeatCraftCoreApp(int width, int height, float density)
-    : _width(width)
-    , _height(height)
+SeatCraftCoreApp::SeatCraftCoreApp(const tgfx::Size &boundSize, const tgfx::Size &contentSize, float density)
+    : _boundSize(boundSize)
+    , _contentSize(contentSize)
     , _density(density) {
 }
 
@@ -20,8 +22,33 @@ SeatCraftCoreApp::~SeatCraftCoreApp() {
     tgfx::PrintLog("SeatCraftCoreApp::~SeatCraftCoreApp()");
 }
 
-bool SeatCraftCoreApp::updateScreen(int width, int height, float density) {
-    if (width <= 0 || height <= 0) {
+tgfx::Size SeatCraftCoreApp::getBoundsSize() const {
+    return _boundSize;
+}
+
+tgfx::Size SeatCraftCoreApp::getContentSize() const {
+    return _contentSize;
+}
+
+std::string SeatCraftCoreApp::getAreaSvgPath() const {
+    return _areaSvgPath;
+}
+
+bool SeatCraftCoreApp::updateContentSize(const tgfx::Size &contentSize) {
+    if (contentSize.width <= 0 || contentSize.height <= 0) {
+        tgfx::PrintError("SeatCraftCoreApp::updateContentSize() width or height is invalid!");
+        return false;
+    }
+
+    if (contentSize == _contentSize) {
+        return false;
+    }
+    _contentSize = contentSize;
+    return true;
+}
+
+bool SeatCraftCoreApp::updateScreen(const tgfx::Size &boundSize, float density) {
+    if (boundSize.width <= 0 || boundSize.height <= 0) {
         tgfx::PrintError("SeatCraftCoreApp::updateScreen() width or height is invalid!");
         return false;
     }
@@ -29,11 +56,10 @@ bool SeatCraftCoreApp::updateScreen(int width, int height, float density) {
         tgfx::PrintError("SeatCraftCoreApp::updateScreen() density is invalid!");
         return false;
     }
-    if (width == _width && height == _height && density == _density) {
+    if (boundSize == _boundSize && density == _density) {
         return false;
     }
-    _width = width;
-    _height = height;
+    _boundSize = boundSize;
     _density = density;
     return true;
 }
@@ -44,6 +70,21 @@ bool SeatCraftCoreApp::updateZoomAndOffset(float zoomScale, const tgfx::Point &c
     }
     _zoomScale = zoomScale;
     _contentOffset = contentOffset;
+    return true;
+}
+
+bool SeatCraftCoreApp::updateAreaSvgPath(const std::string &path) {
+    if (_areaSvgPath == path) {
+        return false;
+    }
+
+    namespace fs = std::filesystem;
+    if (!fs::exists(path)) {
+        tgfx::PrintError("SeatCraftCoreApp::updateAreaSvgPath() path does not exist!");
+        return false;
+    }
+
+    _areaSvgPath = path;
     return true;
 }
 

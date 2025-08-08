@@ -20,8 +20,8 @@ class SeatCraftCoreApp;
 
 namespace kk::drawers {
 class GridBackgroundDrawer;
-class ConicGradientDrawer;
-class SeatMinimapDrawer;
+class SeatLayerTree;
+class SeatMinimapLayerTree;
 };  // namespace kk::drawers
 
 namespace kk::renderer {
@@ -30,21 +30,21 @@ class SeatCraftCoreRenderer {
   public:
     explicit SeatCraftCoreRenderer(std::shared_ptr<kk::SeatCraftCoreApp> app, std::unique_ptr<RendererBackend> backend);
 
-    virtual ~SeatCraftCoreRenderer();
+    ~SeatCraftCoreRenderer();
 
-    virtual void updateSize();
+    void updateSize();
 
-    virtual void invalidateContent();
+    void invalidateContent();
 
-    virtual void draw(bool force = false);
+    void draw(bool force = false);
 
-  protected:
+  private:
     std::shared_ptr<kk::SeatCraftCoreApp> app;
     std::unique_ptr<RendererBackend> backend;
     bool invalidate;
-    std::unique_ptr<kk::drawers::GridBackgroundDrawer> gridBackground;
-    std::unique_ptr<kk::drawers::ConicGradientDrawer> conicGradient;
-    std::unique_ptr<kk::drawers::SeatMinimapDrawer> minimap;
+    std::unique_ptr<kk::drawers::GridBackgroundDrawer> _gridLayer;
+    std::unique_ptr<kk::drawers::SeatLayerTree> _seatLayer;
+    std::unique_ptr<kk::drawers::SeatMinimapLayerTree> _minimapLayer;
 };
 };  // namespace kk::renderer
 

@@ -8,24 +8,23 @@
 #ifndef SeatCraftCoreApp_hpp
 #define SeatCraftCoreApp_hpp
 
-#include <stdio.h>
+#include <string>
 
 #include <tgfx/core/Point.h>
+#include <tgfx/core/Size.h>
 
 namespace kk {
 class SeatCraftCoreApp {
   public:
-    explicit SeatCraftCoreApp(int width = 1280, int height = 720, float density = 1.0f);
+    explicit SeatCraftCoreApp(const tgfx::Size &boundSize = tgfx::Size{1280, 720}, const tgfx::Size &contentSize = tgfx::Size{0, 0}, float density = 1.0f);
 
-    virtual ~SeatCraftCoreApp();
+    ~SeatCraftCoreApp();
 
-    int width() const {
-        return _width;
-    }
+    tgfx::Size getBoundsSize() const;
 
-    int height() const {
-        return _height;
-    }
+    tgfx::Size getContentSize() const;
+
+    std::string getAreaSvgPath() const;
 
     float density() const {
         return _density;
@@ -39,15 +38,18 @@ class SeatCraftCoreApp {
         return _contentOffset;
     }
 
-    bool updateScreen(int width, int height, float density);
+    bool updateContentSize(const tgfx::Size &contentSize);
+    bool updateScreen(const tgfx::Size &boundSize, float density);
     bool updateZoomAndOffset(float zoomScale, const tgfx::Point &contentOffset);
+    bool updateAreaSvgPath(const std::string &path);
 
   private:
-    int _width = 1280;
-    int _height = 720;
+    tgfx::Size _boundSize{1280, 720};
+    tgfx::Size _contentSize{0, 0};
     float _density = 1.0f;
     float _zoomScale = 1.0f;
     tgfx::Point _contentOffset = {};
+    std::string _areaSvgPath{};
 };
 
 };  // namespace kk
