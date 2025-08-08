@@ -19,14 +19,21 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     // Do any additional setup after loading the view from its nib.
+
+    NSBundle *bundle = [NSBundle mainBundle];
+    NSString *svgPath = [bundle pathForResource:@"seat_area" ofType:@"svg"];
+    [self.seatCraftView updateAreaSVG:svgPath];
+
+    KKSeatCraftCoreSeatStatusSvgPathMap *seatStatusSvgPathMap = self.seatCraftView.seatStatusSvgPathMap;
+
+    [seatStatusSvgPathMap add:1 path:[bundle pathForResource:@"icon_chooseSeat_canSelected" ofType:@"svg"]];
+    [seatStatusSvgPathMap add:2 path:[bundle pathForResource:@"icon_chooseSeat_selected" ofType:@"svg"]];
+    [seatStatusSvgPathMap add:3 path:[bundle pathForResource:@"icon_chooseSeat_noSelected" ofType:@"svg"]];
 }
 
 - (void)viewDidAppear:(BOOL)animated {
     [super viewDidAppear:animated];
 
     [self.seatCraftView updateContentSize:CGSizeMake(1000, 843)];
-
-    NSString *svgPath = [[NSBundle mainBundle] pathForResource:@"seat_area" ofType:@"svg"];
-    [self.seatCraftView updateAreaSVG:svgPath];
 }
 @end

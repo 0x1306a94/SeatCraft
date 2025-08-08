@@ -59,6 +59,7 @@
 		3C75F5B62E448A00005A5966 /* Exceptions for "SeatCraftCore" folder in "SeatCraftCore" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			publicHeaders = (
+				platform/ios/KKSeatCraftCoreSeatStatusSvgPathMap.h,
 				platform/ios/KKSeatCraftCoreView.h,
 				SeatCraftCore.h,
 			);

@@ -9,6 +9,10 @@
 
 #import "KKSeatCraftCoreBackendView.h"
 
+#import "KKSeatCraftCoreSeatStatusSvgPathMap.h"
+
+#import "KKSeatCraftCoreSeatStatusSvgPathMap+Private.h"
+
 #import "../../core/SeatCraftCoreApp.hpp"
 #import "../../core/renderer/SeatCraftCoreRenderer.hpp"
 #import "../../core/ui/GestureController.hpp"
@@ -52,7 +56,7 @@
 @property (nonatomic, assign) CGSize contentSize;
 
 @property (nonatomic, strong) NSString *areaSVGPath;
-
+@property (nonatomic, strong) KKSeatCraftCoreSeatStatusSvgPathMap *seatStatusSvgPathMap;
 @end
 
 @implementation KKSeatCraftCoreView {
@@ -109,6 +113,8 @@
     self.currentPinchOffset = CGPointZero;
     self.pinchCenter = CGPointZero;
     self.isTapEnabled = true;
+
+    self.seatStatusSvgPathMap = [[KKSeatCraftCoreSeatStatusSvgPathMap alloc] init];
 
     [self setupViews];
 
@@ -190,26 +196,25 @@
     CGPoint translation = [gesture translationInView:self.backendView];
     translation.x *= contentScaleFactor;
     translation.y *= contentScaleFactor;
-    bool isBegan = gesture.state == UIGestureRecognizerStateBegan;
-    _gestureController->pan(tgfx::Point{static_cast<float>(translation.x), static_cast<float>(translation.y)}, isBegan);
-    [self updateZoom:_gestureController->getZoomScale() contentOffset:_gestureController->getContentOffset()];
+    //    bool isBegan = gesture.state == UIGestureRecognizerStateBegan;
+    //    _gestureController->pan(tgfx::Point{static_cast<float>(translation.x), static_cast<float>(translation.y)}, isBegan);
+    //    [self updateZoom:_gestureController->getZoomScale() contentOffset:_gestureController->getContentOffset()];
 
-    //    if (gesture.state == UIGestureRecognizerStateBegan) {
-    //        self.currentPanOffset = translation;
-    //        self.isTapEnabled = false;
-    //    }
-    //    if (gesture.state == UIGestureRecognizerStateEnded) {
-    //        self.isTapEnabled = true;
-    //        return;
-    //    }
-    //    CGFloat contentScaleFactor = self.backendView.contentScaleFactor;
-    //    self.contentOffset =
-    //        CGPointMake(self.contentOffset.x +
-    //                        (translation.x - self.currentPanOffset.x) * contentScaleFactor,
-    //                    self.contentOffset.y +
-    //                        (translation.y - self.currentPanOffset.y) * contentScaleFactor);
-    //    self.currentPanOffset = translation;
-    //    [self updateZoom:self.zoomScale contentOffset:self.contentOffset];
+    if (gesture.state == UIGestureRecognizerStateBegan) {
+        self.currentPanOffset = translation;
+        self.isTapEnabled = false;
+    }
+    if (gesture.state == UIGestureRecognizerStateEnded) {
+        self.isTapEnabled = true;
+        return;
+    }
+    self.contentOffset =
+        CGPointMake(self.contentOffset.x +
+                        (translation.x - self.currentPanOffset.x) * contentScaleFactor,
+                    self.contentOffset.y +
+                        (translation.y - self.currentPanOffset.y) * contentScaleFactor);
+    self.currentPanOffset = translation;
+    [self updateZoom:self.zoomScale contentOffset:tgfx::Point{static_cast<float>(self.contentOffset.x), static_cast<float>(self.contentOffset.y)}];
 }
 
 - (void)handleBackendViewPinch:(UIPinchGestureRecognizer *)gesture {
@@ -220,34 +225,34 @@
     center.x *= contentScaleFactor;
     center.y *= contentScaleFactor;
 
-    bool isBegan = gesture.state == UIGestureRecognizerStateBegan;
-    float scale = gesture.scale;
-    _gestureController->pinch(scale, tgfx::Point{static_cast<float>(center.x), static_cast<float>(center.y)}, isBegan);
-    [self updateZoom:_gestureController->getZoomScale() contentOffset:_gestureController->getContentOffset()];
+    //    bool isBegan = gesture.state == UIGestureRecognizerStateBegan;
+    //    float scale = gesture.scale;
+    //    _gestureController->pinch(scale, tgfx::Point{static_cast<float>(center.x), static_cast<float>(center.y)}, isBegan);
+    //    [self updateZoom:_gestureController->getZoomScale() contentOffset:_gestureController->getContentOffset()];
 
-    //    if (gesture.state == UIGestureRecognizerStateBegan) {
-    //        self.currentZoom = self.zoomScale;
-    //        self.currentPinchOffset = self.contentOffset;
-    //        self.pinchCenter = center;
-    //    }
-    //
-    //    if (gesture.state == UIGestureRecognizerStateEnded) {
-    //        self.isTapEnabled = true;
-    //        return;
-    //    }
-    //
-    //    if (gesture.numberOfTouches != 2) {
-    //        return;
-    //    }
-    //
-    //    CGFloat scale = MAX(self.minimumZoomScale, MIN(self.maximumZoomScale, self.currentZoom * gesture.scale));
-    //    CGPoint offset;
-    //    offset.x = (self.currentPinchOffset.x - self.pinchCenter.x) * scale / self.currentZoom + center.x;
-    //    offset.y = (self.currentPinchOffset.y - self.pinchCenter.y) * scale / self.currentZoom + center.y;
-    //
-    //    self.zoomScale = scale;
-    //    self.contentOffset = offset;
-    //    [self updateZoom:self.zoomScale contentOffset:self.contentOffset];
+    if (gesture.state == UIGestureRecognizerStateBegan) {
+        self.currentZoom = self.zoomScale;
+        self.currentPinchOffset = self.contentOffset;
+        self.pinchCenter = center;
+    }
+
+    if (gesture.state == UIGestureRecognizerStateEnded) {
+        self.isTapEnabled = true;
+        return;
+    }
+
+    if (gesture.numberOfTouches != 2) {
+        return;
+    }
+
+    CGFloat scale = MAX(self.minimumZoomScale, MIN(self.maximumZoomScale, self.currentZoom * gesture.scale));
+    CGPoint offset;
+    offset.x = (self.currentPinchOffset.x - self.pinchCenter.x) * scale / self.currentZoom + center.x;
+    offset.y = (self.currentPinchOffset.y - self.pinchCenter.y) * scale / self.currentZoom + center.y;
+
+    self.zoomScale = scale;
+    self.contentOffset = offset;
+    [self updateZoom:self.zoomScale contentOffset:tgfx::Point{static_cast<float>(self.contentOffset.x), static_cast<float>(self.contentOffset.y)}];
 }
 
 - (void)setupDisplayLink {
@@ -332,8 +337,9 @@
 
 #else
 
-    //    [self updateZoom:self.zoomScale contentOffset:self.contentOffset];
-    [self updateZoom:_gestureController->getZoomScale() contentOffset:_gestureController->getContentOffset()];
+    [self updateZoom:self.zoomScale contentOffset:tgfx::Point{static_cast<float>(self.contentOffset.x), static_cast<float>(self.contentOffset.y)}];
+
+//    [self updateZoom:_gestureController->getZoomScale() contentOffset:_gestureController->getContentOffset()];
 #endif
 }
 
@@ -344,6 +350,9 @@
 
 - (void)updateContentSize:(CGSize)contentSize {
     self.contentSize = contentSize;
+
+    auto seatSvgMap = [self.seatStatusSvgPathMap getMap];
+    _app->updateSeatStatusSVGPathMap(std::move(seatSvgMap));
 
     auto density = _app->density();
     _app->updateContentSize(tgfx::Size{static_cast<float>(contentSize.width * density), static_cast<float>(contentSize.height * density)});

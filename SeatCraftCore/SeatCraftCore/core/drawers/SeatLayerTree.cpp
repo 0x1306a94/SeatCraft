@@ -72,10 +72,10 @@ void SeatLayerTree::onDraw(tgfx::Canvas *canvas, const kk::SeatCraftCoreApp *app
         _areaLayer->setAreaSvgPath(app->getAreaSvgPath());
     }
 
-    auto rootBounds = _root->getBounds();
+    //    auto rootBounds = _root->getBounds();
     auto surface = canvas->getSurface();
-    auto width = surface->width();
-    auto height = surface->height();
+    //    auto width = surface->width();
+    //    auto height = surface->height();
 
     updateRootMatrix(app);
     auto zoomScale = app->zoomScale();

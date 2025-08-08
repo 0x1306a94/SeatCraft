@@ -10,4 +10,5 @@
 FOUNDATION_EXPORT double SeatCraftCoreVersionNumber;
 FOUNDATION_EXPORT const unsigned char SeatCraftCoreVersionString[];
 
+#import <SeatCraftCore/KKSeatCraftCoreSeatStatusSvgPathMap.h>
 #import <SeatCraftCore/KKSeatCraftCoreView.h>

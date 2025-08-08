@@ -11,6 +11,10 @@
 #include <tgfx/core/Size.h>
 #include <tgfx/layers/Layer.h>
 
+namespace tgfx {
+class SVGDOM;
+}
+
 namespace kk {
 class SeatCraftCoreApp;
 };
@@ -38,6 +42,8 @@ class SeatAreaLayer : public tgfx::Layer {
 
   protected:
     SeatAreaLayer(const kk::SeatCraftCoreApp *app);
+
+    std::shared_ptr<tgfx::SVGDOM> loadSvgDom(const std::string &path);
 
     void onUpdateContent(tgfx::LayerRecorder *recorder) override;
 

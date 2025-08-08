@@ -34,6 +34,10 @@ std::string SeatCraftCoreApp::getAreaSvgPath() const {
     return _areaSvgPath;
 }
 
+const kk::SeatStatusSVGPathMap &SeatCraftCoreApp::getSeatStatusSvgMap() const {
+    return _seatStatusSvgMap;
+}
+
 bool SeatCraftCoreApp::updateContentSize(const tgfx::Size &contentSize) {
     if (contentSize.width <= 0 || contentSize.height <= 0) {
         tgfx::PrintError("SeatCraftCoreApp::updateContentSize() width or height is invalid!");
@@ -85,6 +89,15 @@ bool SeatCraftCoreApp::updateAreaSvgPath(const std::string &path) {
     }
 
     _areaSvgPath = path;
+    return true;
+}
+
+bool SeatCraftCoreApp::updateSeatStatusSVGPathMap(SeatStatusSVGPathMap map) {
+    if (_seatStatusSvgMap.empty() && map.empty()) {
+        return false;
+    }
+    _seatStatusSvgMap.clear();
+    _seatStatusSvgMap.insert(map.begin(), map.end());
     return true;
 }
 
