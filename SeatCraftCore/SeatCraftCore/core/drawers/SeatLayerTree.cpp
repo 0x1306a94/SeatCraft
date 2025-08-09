@@ -215,6 +215,27 @@ std::shared_ptr<tgfx::Layer> convertSVGNodeToLayer(tgfx::SVGNode *node) {
     return nullptr;
 }
 
+std::shared_ptr<tgfx::Layer> convertSVGDomToLayer(std::shared_ptr<tgfx::SVGDOM> dom) {
+    if (dom == nullptr) {
+        return nullptr;
+    }
+
+    auto &rootNode = dom->getRoot();
+    if (!rootNode->hasChildren()) {
+        return nullptr;
+    }
+
+    auto root = tgfx::Layer::Make();
+    auto &childrens = rootNode->getChildren();
+    for (const auto &child : childrens) {
+        auto layer = convertSVGNodeToLayer(child.get());
+        if (layer) {
+            root->addChild(layer);
+        }
+    }
+    return root;
+}
+
 SeatLayerTree::SeatLayerTree()
     : kk::drawers::Drawer("SeatLayerTree")
     , _root(nullptr)
@@ -253,23 +274,53 @@ std::shared_ptr<tgfx::Layer> SeatLayerTree::buildLayerTree(const kk::SeatCraftCo
 #else
 
     auto root = tgfx::Layer::Make();
-    auto svgDom = loadSvgDom(app->getAreaSvgPath());
-    if (svgDom == nullptr) {
-        return root;
+    auto areaSvgDom = loadSvgDom(app->getAreaSvgPath());
+    auto areaLayer = convertSVGDomToLayer(areaSvgDom);
+    if (areaLayer) {
+        root->addChild(areaLayer);
     }
 
-    auto &rootNode = svgDom->getRoot();
-    if (!rootNode->hasChildren()) {
-        return root;
-    }
-
-    auto &childrens = rootNode->getChildren();
-    for (const auto &child : childrens) {
-        auto layer = convertSVGNodeToLayer(child.get());
-        if (layer) {
-            root->addChild(layer);
+    do {
+        // 渲染座位 Mock
+        const auto &seatStatusSvgMap = app->getSeatStatusSvgMap();
+        auto iter = seatStatusSvgMap.find(1);
+        if (iter == seatStatusSvgMap.end()) {
+            break;
         }
-    }
+
+        auto seatSvgDom = loadSvgDom(iter->second);
+        if (seatSvgDom == nullptr) {
+            break;
+        }
+
+        auto areaDomSize = areaSvgDom->getContainerSize();
+        auto seatDomSize = seatSvgDom->getContainerSize();
+
+        float seatStartX = areaDomSize.width * 0.1;
+        float seatStartY = areaDomSize.height * 0.1;
+        float lineSpacing = 10.0f;
+        float itemSpacing = 10.0f;
+        int rows = 100, columns = 150;
+
+        auto seatRootLayer = tgfx::Layer::Make();
+
+        for (int row = 0; row < rows; row++) {
+            for (int col = 0; col < columns; col++) {
+                float itemX = seatStartX + row * lineSpacing + row * seatDomSize.width;
+                float itemY = seatStartY + col * itemSpacing + col * seatDomSize.height;
+
+                auto seatLayer = convertSVGDomToLayer(seatSvgDom);
+                if (seatLayer) {
+                    auto matrix = tgfx::Matrix::MakeTrans(itemX, itemY);
+                    seatLayer->setMatrix(matrix);
+                    seatRootLayer->addChild(seatLayer);
+                }
+            }
+        }
+
+        root->addChild(seatRootLayer);
+
+    } while (0);
 
     return root;
 #endif

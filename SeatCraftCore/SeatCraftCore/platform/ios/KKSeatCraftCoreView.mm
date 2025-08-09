@@ -348,11 +348,15 @@
     [self updateMaxMinZoomScalesForCurrentBounds];
 }
 
+- (void)updateSeatStatusSVGPathMap {
+    auto seatSvgMap = [self.seatStatusSvgPathMap getMap];
+    _app->updateSeatStatusSVGPathMap(std::move(seatSvgMap));
+}
+
 - (void)updateContentSize:(CGSize)contentSize {
     self.contentSize = contentSize;
 
-    auto seatSvgMap = [self.seatStatusSvgPathMap getMap];
-    _app->updateSeatStatusSVGPathMap(std::move(seatSvgMap));
+    [self updateSeatStatusSVGPathMap];
 
     auto density = _app->density();
     _app->updateContentSize(tgfx::Size{static_cast<float>(contentSize.width * density), static_cast<float>(contentSize.height * density)});
@@ -371,6 +375,9 @@
     } else {
         _app->updateAreaSvgPath("");
     }
+
+    [self updateSeatStatusSVGPathMap];
+
     _renderer->invalidateContent();
 }
 
