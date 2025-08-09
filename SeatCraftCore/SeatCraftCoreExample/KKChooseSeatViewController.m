@@ -21,7 +21,7 @@
     // Do any additional setup after loading the view from its nib.
 
     NSBundle *bundle = [NSBundle mainBundle];
-    NSString *svgPath = [bundle pathForResource:@"seat_area" ofType:@"svg"];
+    NSString *svgPath = [bundle pathForResource:@"performbg_2" ofType:@"svg"];
     [self.seatCraftView updateAreaSVG:svgPath];
 
     KKSeatCraftCoreSeatStatusSvgPathMap *seatStatusSvgPathMap = self.seatCraftView.seatStatusSvgPathMap;

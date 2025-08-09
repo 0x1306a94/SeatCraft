@@ -58,6 +58,9 @@
 		};
 		3C75F5B62E448A00005A5966 /* Exceptions for "SeatCraftCore" folder in "SeatCraftCore" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				".clang-format",
+			);
 			publicHeaders = (
 				platform/ios/KKSeatCraftCoreSeatStatusSvgPathMap.h,
 				platform/ios/KKSeatCraftCoreView.h,
@@ -369,6 +372,7 @@
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				ENABLE_DEBUG_DYLIB = YES;
 				ENABLE_MODULE_VERIFIER = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = "$(SRCROOT)";
@@ -411,6 +415,7 @@
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				ENABLE_DEBUG_DYLIB = NO;
 				ENABLE_MODULE_VERIFIER = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = "$(SRCROOT)";

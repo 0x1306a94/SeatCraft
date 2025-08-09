@@ -70,7 +70,14 @@ void SeatAreaLayer::onUpdateContent(tgfx::LayerRecorder *recorder) {
 
     auto areaDomSize = areaSvgDom->getContainerSize();
 
-    auto rootMatrix = areaSvgDom->getRoot()->getTransform();
+    auto rootNode = areaSvgDom->getRoot();
+    auto rootMatrix = rootNode->getTransform();
+
+    //    auto childrens = rootNode->getChildren();
+    //    if (!childrens.empty()) {
+    //        auto &firstNode = childrens.front();
+    //        asm("nop");
+    //    }
 
     do {
         // 渲染区域图
@@ -98,6 +105,7 @@ void SeatAreaLayer::onUpdateContent(tgfx::LayerRecorder *recorder) {
         canvas->restore();
     } while (0);
 
+    return;
     do {
         // 渲染座位 Mock
         const auto &seatStatusSvgMap = _app->getSeatStatusSvgMap();
