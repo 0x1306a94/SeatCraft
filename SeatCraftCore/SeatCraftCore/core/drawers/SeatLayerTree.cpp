@@ -13,7 +13,9 @@
 
 #include <tgfx/core/Canvas.h>
 #include <tgfx/core/Path.h>
+#include <tgfx/core/Rect.h>
 #include <tgfx/layers/DisplayList.h>
+#include <tgfx/layers/ImageLayer.h>
 #include <tgfx/layers/ShapeLayer.h>
 #include <tgfx/layers/SolidColor.h>
 #include <tgfx/layers/TextLayer.h>
@@ -257,6 +259,78 @@ bool SeatLayerTree::updateContentSize(const kk::SeatCraftCoreApp *app) {
     return true;
 }
 
+bool SeatLayerTree::prebuildSeatStatusBitmap(tgfx::Canvas *canvas, const kk::SeatCraftCoreApp *app) {
+    if (!_seatStatusImageMap.empty()) {
+        return false;
+    }
+
+    const auto &seatStatusSvgMap = app->getSeatStatusSvgMap();
+    if (seatStatusSvgMap.empty()) {
+        return false;
+    }
+    auto statusSize = seatStatusSvgMap.size();
+    auto columns = 4;
+    auto rows = static_cast<int>(std::ceil(static_cast<float>(statusSize) / static_cast<float>(columns)));
+    auto lineSpacing = 10;
+    auto itemSpacing = 10;
+
+    auto density = app->density();
+    auto itemWidth = static_cast<int>(32 * density);
+    auto itemHeight = static_cast<int>(32 * density);
+    auto surfaceWidth = itemWidth * columns + (columns + 1) * itemSpacing;
+    auto surfaceHeight = itemHeight * rows + (rows + 1) * lineSpacing;
+
+    auto context = canvas->getSurface()->getContext();
+    auto surface = tgfx::Surface::Make(context, surfaceWidth, surfaceHeight, tgfx::ColorType::RGBA_8888);
+    auto tempCanvas = surface->getCanvas();
+    tempCanvas->clear();
+    std::unordered_map<kk::SeatStatusKey, tgfx::Rect> rectsMap{};
+    auto startX = static_cast<float>(itemSpacing), startY = static_cast<float>(lineSpacing);
+    for (const auto &[key, value] : seatStatusSvgMap) {
+        auto seatSvgDom = loadSvgDom(value);
+        if (seatSvgDom == nullptr) {
+            continue;
+        }
+
+        auto domSize = seatSvgDom->getContainerSize();
+        auto scale = static_cast<float>(itemWidth) / domSize.width;
+        auto matrix = tgfx::Matrix::MakeScale(scale);
+        matrix.postTranslate(startX, startY);
+
+        tempCanvas->save();
+        tempCanvas->concat(matrix);
+        seatSvgDom->render(tempCanvas);
+        tempCanvas->restore();
+
+        rectsMap.emplace(key, tgfx::Rect::MakeXYWH(startX, startY, static_cast<float>(itemWidth), static_cast<float>(itemHeight)));
+
+        if ((startX + itemWidth + itemSpacing) >= (surfaceWidth - itemSpacing)) {
+            startX = itemSpacing;
+        } else {
+            startX += itemWidth + itemSpacing;
+        }
+
+        if ((startY + itemHeight + lineSpacing) >= (surfaceHeight - itemHeight)) {
+            startY = lineSpacing;
+        } else {
+            startY += itemHeight + lineSpacing;
+        }
+    }
+
+    if (rectsMap.empty()) {
+        return false;
+    }
+
+    _seatStatusImageMap.clear();
+    auto image = surface->makeImageSnapshot();
+    for (const auto &[key, rect] : rectsMap) {
+        auto subimage = image->makeSubset(rect);
+        _seatStatusImageMap.emplace(key, subimage);
+    }
+
+    return true;
+}
+
 void SeatLayerTree::updateRootMatrix(const kk::SeatCraftCoreApp *app) {
     auto zoomScale = app->zoomScale();
     auto contentOffset = app->contentOffset();
@@ -280,6 +354,7 @@ std::shared_ptr<tgfx::Layer> SeatLayerTree::buildLayerTree(const kk::SeatCraftCo
         root->addChild(areaLayer);
     }
 
+#if 0
     do {
         // 渲染座位 Mock
         const auto &seatStatusSvgMap = app->getSeatStatusSvgMap();
@@ -321,6 +396,48 @@ std::shared_ptr<tgfx::Layer> SeatLayerTree::buildLayerTree(const kk::SeatCraftCo
         root->addChild(seatRootLayer);
 
     } while (0);
+#else
+    do {
+        // 渲染座位 Mock
+        auto iter = _seatStatusImageMap.find(1);
+        if (iter == _seatStatusImageMap.end()) {
+            break;
+        }
+
+        auto bitmap = iter->second;
+        auto bitmapWidth = bitmap->width();
+        auto bitmapHeight = bitmap->height();
+
+        auto areaDomSize = areaSvgDom->getContainerSize();
+        auto seatDomSize = tgfx::Size::Make(32, 32);
+        float seatStartX = areaDomSize.width * 0.1;
+        float seatStartY = areaDomSize.height * 0.1;
+        float lineSpacing = 10.0f;
+        float itemSpacing = 10.0f;
+        int rows = 100, columns = 150;
+
+        auto scale = seatDomSize.width / static_cast<float>(bitmapWidth);
+
+        auto seatRootLayer = tgfx::Layer::Make();
+
+        for (int row = 0; row < rows; row++) {
+            for (int col = 0; col < columns; col++) {
+                float itemX = seatStartX + row * lineSpacing + row * seatDomSize.width;
+                float itemY = seatStartY + col * itemSpacing + col * seatDomSize.height;
+
+                auto matrix = tgfx::Matrix::MakeScale(scale);
+                matrix.postTranslate(itemX, itemY);
+                auto seatLayer = tgfx::ImageLayer::Make();
+                seatLayer->setImage(bitmap);
+                seatLayer->setMatrix(matrix);
+                seatRootLayer->addChild(seatLayer);
+            }
+        }
+
+        root->addChild(seatRootLayer);
+
+    } while (0);
+#endif
 
     return root;
 #endif
@@ -329,6 +446,8 @@ std::shared_ptr<tgfx::Layer> SeatLayerTree::buildLayerTree(const kk::SeatCraftCo
 void SeatLayerTree::onDraw(tgfx::Canvas *canvas, const kk::SeatCraftCoreApp *app) {
 
     updateContentSize(app);
+
+    prebuildSeatStatusBitmap(canvas, app);
 
     if (_root == nullptr) {
         _root = buildLayerTree(app);

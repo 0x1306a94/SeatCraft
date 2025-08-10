@@ -10,6 +10,8 @@
 
 #include "Drawer.hpp"
 
+#include "../SeatStatusKey.h"
+
 #include <memory>
 
 #include <tgfx/core/Size.h>
@@ -17,6 +19,7 @@
 namespace tgfx {
 class Layer;
 class DisplayList;
+class Image;
 };  // namespace tgfx
 
 namespace kk::drawers {
@@ -30,6 +33,7 @@ class SeatLayerTree : public kk::drawers::Drawer {
   protected:
     void updateRootMatrix(const kk::SeatCraftCoreApp *app);
     bool updateContentSize(const kk::SeatCraftCoreApp *app);
+    bool prebuildSeatStatusBitmap(tgfx::Canvas *canvas, const kk::SeatCraftCoreApp *app);
     std::shared_ptr<tgfx::Layer> buildLayerTree(const kk::SeatCraftCoreApp *app);
     void onDraw(tgfx::Canvas *canvas, const kk::SeatCraftCoreApp *app) override;
 
@@ -38,6 +42,7 @@ class SeatLayerTree : public kk::drawers::Drawer {
     std::shared_ptr<tgfx::Layer> _root{nullptr};
     std::unique_ptr<tgfx::DisplayList> _displayList{nullptr};
     std::shared_ptr<SeatAreaLayer> _areaLayer{nullptr};
+    std::unordered_map<kk::SeatStatusKey, std::shared_ptr<tgfx::Image>> _seatStatusImageMap{};
 };
 
 }  // namespace kk::drawers
