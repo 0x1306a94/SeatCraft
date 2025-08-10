@@ -9,8 +9,6 @@
 
 #include "../SeatCraftCoreApp.hpp"
 
-#include "SeatAreaLayer.hpp"
-
 #include <tgfx/core/Canvas.h>
 #include <tgfx/core/Path.h>
 #include <tgfx/core/Rect.h>
@@ -241,8 +239,7 @@ std::shared_ptr<tgfx::Layer> convertSVGDomToLayer(std::shared_ptr<tgfx::SVGDOM> 
 SeatLayerTree::SeatLayerTree()
     : kk::drawers::Drawer("SeatLayerTree")
     , _root(nullptr)
-    , _displayList(std::make_unique<tgfx::DisplayList>())
-    , _areaLayer(nullptr) {
+    , _displayList(std::make_unique<tgfx::DisplayList>()) {
 }
 
 SeatLayerTree::~SeatLayerTree() {
@@ -331,26 +328,14 @@ bool SeatLayerTree::prebuildSeatStatusBitmap(tgfx::Canvas *canvas, const kk::Sea
     return true;
 }
 
-void SeatLayerTree::updateRootMatrix(const kk::SeatCraftCoreApp *app) {
-    auto zoomScale = app->zoomScale();
-    auto contentOffset = app->contentOffset();
-}
-
-std::shared_ptr<tgfx::Layer> SeatLayerTree::buildLayerTree(const kk::SeatCraftCoreApp *app) {
-#if 0
-    
-    auto root = tgfx::Layer::Make();
-    _areaLayer = SeatAreaLayer::Make(app);
-    _areaLayer->setContentSize(_contentSize);
-    root->addChild(_areaLayer);
-    return root;
-
-#else
+std::shared_ptr<tgfx::Layer> SeatLayerTree::buildLayerTree(tgfx::Canvas *canvas, const kk::SeatCraftCoreApp *app) {
 
     auto root = tgfx::Layer::Make();
     auto areaSvgDom = loadSvgDom(app->getAreaSvgPath());
+    auto areaDomSize = areaSvgDom->getContainerSize();
     auto areaLayer = convertSVGDomToLayer(areaSvgDom);
     if (areaLayer) {
+        _areaDomSize = areaDomSize;
         root->addChild(areaLayer);
     }
 
@@ -408,7 +393,6 @@ std::shared_ptr<tgfx::Layer> SeatLayerTree::buildLayerTree(const kk::SeatCraftCo
         auto bitmapWidth = bitmap->width();
         auto bitmapHeight = bitmap->height();
 
-        auto areaDomSize = areaSvgDom->getContainerSize();
         auto seatDomSize = tgfx::Size::Make(32, 32);
         float seatStartX = areaDomSize.width * 0.1;
         float seatStartY = areaDomSize.height * 0.1;
@@ -440,17 +424,50 @@ std::shared_ptr<tgfx::Layer> SeatLayerTree::buildLayerTree(const kk::SeatCraftCo
 #endif
 
     return root;
-#endif
+}
+
+void SeatLayerTree::updateRootMatrix(tgfx::Canvas *canvas, const kk::SeatCraftCoreApp *app) {
+
+    auto limitSize = app->getContentSize();
+    if (_root == nullptr) {
+        return;
+    }
+
+    if (limitSize.isEmpty() || _areaDomSize.isEmpty()) {
+        _root->setMatrix(tgfx::Matrix::I());
+        return;
+    }
+
+    auto surface = canvas->getSurface();
+    auto surfaceWidth = surface->width();
+    auto surfaceHeight = surface->height();
+
+    const float scaleX = limitSize.width / _areaDomSize.width;
+    const float scaleY = limitSize.height / _areaDomSize.height;
+    const float fitScale = std::min(scaleX, scaleY);
+
+    const tgfx::Point svgCenter(_areaDomSize.width * 0.5f, _areaDomSize.height * 0.5f);
+    const tgfx::Point canvasCenter(surfaceWidth * 0.5f, surfaceHeight * 0.5f);
+
+    tgfx::Matrix matrix = tgfx::Matrix::I();
+    matrix.postTranslate(-svgCenter.x, -svgCenter.y);      // 移动 SVG 到原点中心
+    matrix.postScale(fitScale, fitScale);                  // 缩放
+    matrix.postTranslate(canvasCenter.x, canvasCenter.y);  // 移动到 Canvas 中心
+
+    _root->setMatrix(matrix);
 }
 
 void SeatLayerTree::onDraw(tgfx::Canvas *canvas, const kk::SeatCraftCoreApp *app) {
 
-    updateContentSize(app);
+    if (updateContentSize(app) && _root != nullptr) {
+        _root->removeFromParent();
+        _root = nullptr;
+    }
 
     prebuildSeatStatusBitmap(canvas, app);
 
     if (_root == nullptr) {
-        _root = buildLayerTree(app);
+        _root = buildLayerTree(canvas, app);
         _displayList->root()->addChild(_root);
         _displayList->setRenderMode(tgfx::RenderMode::Tiled);
         // Zoom blur is currently disabled because the Hello2D demo doesn't yet support animation frame
@@ -459,17 +476,9 @@ void SeatLayerTree::onDraw(tgfx::Canvas *canvas, const kk::SeatCraftCoreApp *app
         _displayList->setMaxTileCount(512);
     }
 
-    if (_areaLayer != nullptr) {
-        _areaLayer->setContentSize(_contentSize);
-        _areaLayer->setAreaSvgPath(app->getAreaSvgPath());
-    }
+    updateRootMatrix(canvas, app);
 
-    //    auto rootBounds = _root->getBounds();
     auto surface = canvas->getSurface();
-    //    auto width = surface->width();
-    //    auto height = surface->height();
-
-    updateRootMatrix(app);
     auto zoomScale = app->zoomScale();
     auto contentOffset = app->contentOffset();
     _displayList->setZoomScale(zoomScale);

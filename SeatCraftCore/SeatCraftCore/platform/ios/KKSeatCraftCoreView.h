@@ -12,9 +12,9 @@ NS_ASSUME_NONNULL_BEGIN
 @class KKSeatCraftCoreSeatStatusSvgPathMap;
 
 @interface KKSeatCraftCoreView : UIView
-@property (nonatomic, strong, readonly) KKSeatCraftCoreSeatStatusSvgPathMap *seatStatusSvgPathMap;
 - (void)updateContentSize:(CGSize)contentSize;
 - (void)updateAreaSVG:(NSString *)path;
+- (void)updateSeatStatusSvgPathMap:(KKSeatCraftCoreSeatStatusSvgPathMap *)seatStatusSvgPathMap;
 @end
 
 NS_ASSUME_NONNULL_END

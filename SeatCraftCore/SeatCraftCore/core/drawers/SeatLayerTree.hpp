@@ -23,7 +23,6 @@ class Image;
 };  // namespace tgfx
 
 namespace kk::drawers {
-class SeatAreaLayer;
 class SeatLayerTree : public kk::drawers::Drawer {
   public:
     explicit SeatLayerTree();
@@ -31,17 +30,17 @@ class SeatLayerTree : public kk::drawers::Drawer {
     virtual ~SeatLayerTree();
 
   protected:
-    void updateRootMatrix(const kk::SeatCraftCoreApp *app);
     bool updateContentSize(const kk::SeatCraftCoreApp *app);
     bool prebuildSeatStatusBitmap(tgfx::Canvas *canvas, const kk::SeatCraftCoreApp *app);
-    std::shared_ptr<tgfx::Layer> buildLayerTree(const kk::SeatCraftCoreApp *app);
+    std::shared_ptr<tgfx::Layer> buildLayerTree(tgfx::Canvas *canvas, const kk::SeatCraftCoreApp *app);
+    void updateRootMatrix(tgfx::Canvas *canvas, const kk::SeatCraftCoreApp *app);
     void onDraw(tgfx::Canvas *canvas, const kk::SeatCraftCoreApp *app) override;
 
   private:
     tgfx::Size _contentSize{};
+    tgfx::Size _areaDomSize{};
     std::shared_ptr<tgfx::Layer> _root{nullptr};
     std::unique_ptr<tgfx::DisplayList> _displayList{nullptr};
-    std::shared_ptr<SeatAreaLayer> _areaLayer{nullptr};
     std::unordered_map<kk::SeatStatusKey, std::shared_ptr<tgfx::Image>> _seatStatusImageMap{};
 };
 
