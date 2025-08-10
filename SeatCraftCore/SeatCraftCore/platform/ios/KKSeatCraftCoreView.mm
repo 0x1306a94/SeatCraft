@@ -78,6 +78,7 @@
 - (void)layoutSubviews {
     [super layoutSubviews];
     [self adjustZoomContentViewCenter];
+    _renderer->draw(true);
 }
 
 - (void)didMoveToWindow {
@@ -263,19 +264,21 @@
 
     contentOffset.x = -contentOffset.x;
     contentOffset.y = -contentOffset.y;
-    
+
     [self updateZoom:minScale contentOffset:tgfx::Point{static_cast<float>(contentOffset.x), static_cast<float>(contentOffset.y)}];
 }
 
 - (void)configureWithSize:(CGSize)size {
     self.scrollView.contentSize = size;
     [self updateMaxMinZoomScalesForCurrentBounds];
+    _renderer->draw(true);
 }
 
 - (void)updateSeatStatusSVGPathMap {
     auto seatSvgMap = [self.seatStatusSvgPathMap getMap];
     _app->updateSeatStatusSVGPathMap(std::move(seatSvgMap));
     _renderer->invalidateContent();
+    _renderer->draw(true);
 }
 
 - (void)updateContentSize:(CGSize)contentSize {

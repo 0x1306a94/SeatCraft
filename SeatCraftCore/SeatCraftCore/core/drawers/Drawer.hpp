@@ -29,6 +29,8 @@ class Drawer {
         return _name;
     }
 
+    virtual void prepare(tgfx::Canvas *canvas, const kk::SeatCraftCoreApp *app) = 0;
+
     void draw(tgfx::Canvas *canvas, const kk::SeatCraftCoreApp *app);
 
   protected:

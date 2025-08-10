@@ -17,7 +17,7 @@
 
 #include "../SeatCraftCoreApp.hpp"
 
-#include "../drawers/GridBackgroundDrawer.hpp"
+#include "../drawers/GridBackgroundLayerTree.hpp"
 #include "../drawers/SeatLayerTree.hpp"
 #include "../drawers/SeatMinimapLayerTree.hpp"
 
@@ -26,7 +26,7 @@ SeatCraftCoreRenderer::SeatCraftCoreRenderer(std::shared_ptr<kk::SeatCraftCoreAp
     : app(app)
     , backend(std::move(backend))
     , invalidate(true)
-    , _gridLayer(std::make_unique<kk::drawers::GridBackgroundDrawer>())
+    , _gridLayer(std::make_unique<kk::drawers::GridBackgroundLayerTree>())
     , _seatLayer(std::make_unique<kk::drawers::SeatLayerTree>())
     , _minimapLayer(std::make_unique<kk::drawers::SeatMinimapLayerTree>()) {
 
@@ -81,15 +81,26 @@ void SeatCraftCoreRenderer::draw(bool force) {
     }
 
     auto canvas = surface->getCanvas();
+
+    auto appPtr = app.get();
+    _gridLayer->prepare(canvas, appPtr);
+    _seatLayer->prepare(canvas, appPtr);
+    _minimapLayer->prepare(canvas, appPtr);
+
+    bool hasContentChanged = _gridLayer->hasContentChanged() ||
+        _seatLayer->hasContentChanged() ||
+        _minimapLayer->hasContentChanged();
+
+    if (!hasContentChanged && !force) {
+        device->unlock();
+        return;
+    }
+
     canvas->clear();
     canvas->save();
 
-    auto appPtr = app.get();
-
     _gridLayer->draw(canvas, appPtr);
-
     _seatLayer->draw(canvas, appPtr);
-
     _minimapLayer->draw(canvas, appPtr);
 
     canvas->restore();

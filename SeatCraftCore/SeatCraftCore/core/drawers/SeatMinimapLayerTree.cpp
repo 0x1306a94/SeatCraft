@@ -120,13 +120,30 @@ SeatMinimapLayerTree::~SeatMinimapLayerTree() {
     tgfx::PrintLog("SeatMinimapLayerTree::~SeatMinimapLayerTree");
 }
 
+bool SeatMinimapLayerTree::hasContentChanged() const {
+    if (_root == nullptr) {
+        return true;
+    }
+    return _displayList->hasContentChanged();
+}
+
+void SeatMinimapLayerTree::prepare(tgfx::Canvas *canvas, const kk::SeatCraftCoreApp *app) {
+    if (updateContaierSize(app) && _root != nullptr) {
+        _lineBox->removeFromParent();
+        _root->removeFromParent();
+
+        _lineBox = nullptr;
+        _root = nullptr;
+    }
+}
+
 void SeatMinimapLayerTree::updateLineBox(const kk::SeatCraftCoreApp *app) {
     if (_lineBox == nullptr) {
         return;
     }
 
     // TODO: 需要应用缩放和位移
-    auto zoomScale = app->zoomScale();
+    //    auto zoomScale = app->zoomScale();
     _lineBox->updateBounds(tgfx::Rect::MakeSize(_contaierSize));
 }
 
@@ -149,11 +166,6 @@ std::shared_ptr<SeatMinimapContainerLayer> SeatMinimapLayerTree::buildLayerTree(
 }
 
 void SeatMinimapLayerTree::onDraw(tgfx::Canvas *canvas, const kk::SeatCraftCoreApp *app) {
-
-    if (updateContaierSize(app) && _root != nullptr) {
-        _root->updateSize(_contaierSize);
-        updateLineBox(app);
-    }
 
     if (_root == nullptr) {
         _root = buildLayerTree(app);

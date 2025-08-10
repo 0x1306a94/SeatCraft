@@ -19,7 +19,7 @@ class SeatCraftCoreApp;
 };
 
 namespace kk::drawers {
-class GridBackgroundDrawer;
+class GridBackgroundLayerTree;
 class SeatLayerTree;
 class SeatMinimapLayerTree;
 };  // namespace kk::drawers
@@ -42,7 +42,7 @@ class SeatCraftCoreRenderer {
     std::shared_ptr<kk::SeatCraftCoreApp> app;
     std::unique_ptr<RendererBackend> backend;
     bool invalidate;
-    std::unique_ptr<kk::drawers::GridBackgroundDrawer> _gridLayer;
+    std::unique_ptr<kk::drawers::GridBackgroundLayerTree> _gridLayer;
     std::unique_ptr<kk::drawers::SeatLayerTree> _seatLayer;
     std::unique_ptr<kk::drawers::SeatMinimapLayerTree> _minimapLayer;
 };

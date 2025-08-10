@@ -28,6 +28,8 @@ class SeatLayerTree : public kk::drawers::Drawer {
     explicit SeatLayerTree();
 
     virtual ~SeatLayerTree();
+    bool hasContentChanged() const;
+    virtual void prepare(tgfx::Canvas *canvas, const kk::SeatCraftCoreApp *app) override;
 
   protected:
     bool updateContentSize(const kk::SeatCraftCoreApp *app);

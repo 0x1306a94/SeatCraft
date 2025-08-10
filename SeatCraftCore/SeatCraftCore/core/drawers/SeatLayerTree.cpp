@@ -246,6 +246,26 @@ SeatLayerTree::~SeatLayerTree() {
     tgfx::PrintLog("SeatLayerTree::~SeatLayerTree");
 }
 
+bool SeatLayerTree::hasContentChanged() const {
+    if (_root == nullptr) {
+        return true;
+    }
+    return _displayList->hasContentChanged();
+}
+
+void SeatLayerTree::prepare(tgfx::Canvas *canvas, const kk::SeatCraftCoreApp *app) {
+    if (updateContentSize(app) && _root != nullptr) {
+        _root->removeFromParent();
+        _root = nullptr;
+    }
+
+    updateRootMatrix(canvas, app);
+    auto zoomScale = app->zoomScale();
+    auto contentOffset = app->contentOffset();
+    _displayList->setZoomScale(zoomScale);
+    _displayList->setContentOffset(contentOffset.x, contentOffset.y);
+}
+
 bool SeatLayerTree::updateContentSize(const kk::SeatCraftCoreApp *app) {
     auto contentSize = app->getContentSize();
     if (_contentSize == contentSize) {
@@ -398,7 +418,7 @@ std::shared_ptr<tgfx::Layer> SeatLayerTree::buildLayerTree(tgfx::Canvas *canvas,
         float seatStartY = areaDomSize.height * 0.1;
         float lineSpacing = 10.0f;
         float itemSpacing = 10.0f;
-        int rows = 100, columns = 150;
+        int rows = 100, columns = 200;
 
         auto scale = seatDomSize.width / static_cast<float>(bitmapWidth);
 
@@ -406,8 +426,8 @@ std::shared_ptr<tgfx::Layer> SeatLayerTree::buildLayerTree(tgfx::Canvas *canvas,
 
         for (int row = 0; row < rows; row++) {
             for (int col = 0; col < columns; col++) {
-                float itemX = seatStartX + row * lineSpacing + row * seatDomSize.width;
-                float itemY = seatStartY + col * itemSpacing + col * seatDomSize.height;
+                float itemX = seatStartX + col * lineSpacing + col * seatDomSize.width;
+                float itemY = seatStartY + row * itemSpacing + row * seatDomSize.height;
 
                 auto matrix = tgfx::Matrix::MakeScale(scale);
                 matrix.postTranslate(itemX, itemY);
@@ -459,11 +479,6 @@ void SeatLayerTree::updateRootMatrix(tgfx::Canvas *canvas, const kk::SeatCraftCo
 
 void SeatLayerTree::onDraw(tgfx::Canvas *canvas, const kk::SeatCraftCoreApp *app) {
 
-    if (updateContentSize(app) && _root != nullptr) {
-        _root->removeFromParent();
-        _root = nullptr;
-    }
-
     prebuildSeatStatusBitmap(canvas, app);
 
     if (_root == nullptr) {
@@ -476,13 +491,7 @@ void SeatLayerTree::onDraw(tgfx::Canvas *canvas, const kk::SeatCraftCoreApp *app
         _displayList->setMaxTileCount(512);
     }
 
-    updateRootMatrix(canvas, app);
-
     auto surface = canvas->getSurface();
-    auto zoomScale = app->zoomScale();
-    auto contentOffset = app->contentOffset();
-    _displayList->setZoomScale(zoomScale);
-    _displayList->setContentOffset(contentOffset.x, contentOffset.y);
     _displayList->render(surface, false);
 }
 

@@ -27,6 +27,8 @@ class SeatMinimapLayerTree : public kk::drawers::Drawer {
     explicit SeatMinimapLayerTree();
 
     virtual ~SeatMinimapLayerTree();
+    bool hasContentChanged() const;
+    virtual void prepare(tgfx::Canvas *canvas, const kk::SeatCraftCoreApp *app) override;
 
   protected:
     void updateLineBox(const kk::SeatCraftCoreApp *app);
