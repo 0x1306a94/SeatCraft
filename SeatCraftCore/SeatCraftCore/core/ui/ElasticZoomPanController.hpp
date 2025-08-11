@@ -8,77 +8,173 @@
 #ifndef ElasticZoomPanController_hpp
 #define ElasticZoomPanController_hpp
 
+#include <algorithm>
+
+#include <tgfx/core/Matrix.h>
+#include <tgfx/core/Point.h>
+#include <tgfx/core/Rect.h>
+#include <tgfx/core/Size.h>
+
 namespace kk::ui {
+
+// 模拟 UIEdgeInsets
+struct EdgeInsets {
+    float top;
+    float left;
+    float bottom;
+    float right;
+    EdgeInsets()
+        : EdgeInsets(0.0f, 0.0f, 0.0f, 0.0f) {}
+    EdgeInsets(float top, float left, float bottom, float right)
+        : top(top)
+        , left(left)
+        , bottom(bottom)
+        , right(right) {}
+};
+
 class ElasticZoomPanController {
   public:
-    ElasticZoomPanController(float svgWidth, float svgHeight, float canvasWidth, float canvasHeight);
+    ElasticZoomPanController() = default;
 
-    // 更新 SVG（内容）尺寸
-    void updateSVGSize(float newSvgWidth, float newSvgHeight);
+    // --- State Setters ---
+    void setBounds(const tgfx::Size &bounds) {
+        _bounds = bounds;
+    }
 
-    // 更新 Canvas（显示区域）尺寸
-    void updateCanvasSize(float newCanvasWidth, float newCanvasHeight);
+    const tgfx::Size &getBounds() const {
+        return _bounds;
+    }
 
-    // 设置缩放范围
-    void setScaleRange(float minS, float maxS);
+    void setContentSize(const tgfx::Size &contentSize) {
+        _contentSize = contentSize;
+    }
 
-    // 设置缩放
-    void setScale(float scale);
+    const tgfx::Size &getContentSize() const {
+        return _contentSize;
+    }
 
-    // 设置弹性阻尼系数
-    void setBounceFactor(float factor);
+    void setContentInset(const EdgeInsets &contentInset) {
+        _contentInset = contentInset;
+    }
 
-    // 手势开始
-    void beginGesture();
+    const EdgeInsets &getContentInset() const {
+        return _contentInset;
+    }
 
-    // 处理平移手势输入
-    void onPan(float deltaX, float deltaY);
+    void setMinimumZoomScale(float minimumZoomScale) {
+        _minimumZoomScale = minimumZoomScale;
+    }
 
-    // 处理缩放手势输入
-    void onZoom(float scaleFactor, float anchorX, float anchorY);
+    float getMinimumZoomScale() const {
+        return _minimumZoomScale;
+    }
 
-    // 手势结束
-    void endGesture();
+    void setMaximumZoomScale(float maximumZoomScale) {
+        _maximumZoomScale = maximumZoomScale;
+    }
 
-    // 手动设置当前状态（动画插值时调用）
-    void setState(float s, float ox, float oy);
+    float getMaximumZoomScale() const {
+        return _maximumZoomScale;
+    }
 
-    // 获取当前状态
-    float getScale() const;
-    float getOffsetX() const;
-    float getOffsetY() const;
+    void setZoomScale(float zoomScale) {
+        _zoomScale = std::clamp(zoomScale, _minimumZoomScale, _maximumZoomScale);
+        revalidateContentOffset();
+    }
 
-    // 获取合法状态（用于动画目标值）
-    void getClampedState(float &outScale, float &outOffsetX, float &outOffsetY) const;
+    float getZoomScale() const {
+        return _zoomScale;
+    }
 
-    // 重置到初始状态（fit center）
-    void reset();
+    void setContentOffset(const tgfx::Point &contentOffset) {
+        _contentOffset = contentOffset;
+        revalidateContentOffset();
+    }
+
+    tgfx::Point getContentOffset() const {
+        return _contentOffset;
+    }
+
+    // --- Transformation Matrix ---
+    tgfx::Matrix getMatrix() const {
+        tgfx::Matrix matrix;
+        matrix.setScale(_zoomScale, _zoomScale);
+        matrix.preTranslate(_contentOffset.x, _contentOffset.y);
+        return matrix;
+    }
+
+    // --- Gesture Handlers (Simulating User Input) ---
+    void handlePan(const tgfx::Point &delta) {
+        _contentOffset.x += delta.x;
+        _contentOffset.y += delta.y;
+        revalidateContentOffset();
+    }
+
+    void handlePinch(float scale, const tgfx::Point &center) {
+        float contentPointX = (center.x - _contentOffset.x) / _zoomScale;
+        float contentPointY = (center.y - _contentOffset.y) / _zoomScale;
+
+        float newZoomScale = _zoomScale * scale;
+        _zoomScale = std::clamp(newZoomScale, _minimumZoomScale, _maximumZoomScale);
+
+        float newOffsetX = center.x - contentPointX * _zoomScale;
+        float newOffsetY = center.y - contentPointY * _zoomScale;
+
+        _contentOffset.x = newOffsetX;
+        _contentOffset.y = newOffsetY;
+
+        revalidateContentOffset();
+    }
 
   private:
-    float bounceDelta(float over) const;
-    float applyBounceOffsetX(float delta);
-    float applyBounceOffsetY(float delta);
-    float clampOffsetX(float x, float s) const;
-    float clampOffsetY(float y, float s) const;
-    void clampScale();
-    void clampOffset();
+    // --- Internal Logic ---
+    void revalidateContentOffset() {
+        const float scaledWidth = _contentSize.width * _zoomScale;
+        const float scaledHeight = _contentSize.height * _zoomScale;
 
-  private:
-    float _svgW, _svgH;
-    float _canvasW, _canvasH;
+        // 考虑 contentInset 后的视图有效边界
+        const float effectiveBoundsWidth = _bounds.width - _contentInset.left - _contentInset.right;
+        const float effectiveBoundsHeight = _bounds.height - _contentInset.top - _contentInset.bottom;
 
-    float _minScale;
-    float _maxScale;
+        // 计算水平方向的边界
+        float minX, maxX;
+        if (scaledWidth < effectiveBoundsWidth) {
+            // 内容小于有效边界，居中对齐，并考虑 left/right inset
+            minX = (_bounds.width - scaledWidth) / 2.0f;
+            maxX = minX;
+        } else {
+            // 内容大于有效边界，允许滚动
+            // 注意：平移的边界应该加上 contentInset
+            minX = -scaledWidth + effectiveBoundsWidth + _contentInset.left;
+            maxX = _contentInset.left;
+        }
 
-    float _scale;
-    float _offsetX;
-    float _offsetY;
+        // 计算垂直方向的边界
+        float minY, maxY;
+        if (scaledHeight < effectiveBoundsHeight) {
+            // 内容小于有效边界，居中对齐，并考虑 top/bottom inset
+            minY = (_bounds.height - scaledHeight) / 2.0f;
+            maxY = minY;
+        } else {
+            // 内容大于有效边界，允许滚动
+            minY = -scaledHeight + effectiveBoundsHeight + _contentInset.top;
+            maxY = _contentInset.top;
+        }
 
-    float _bounceFactor;
+        _contentOffset.x = std::clamp(_contentOffset.x, minX, maxX);
+        _contentOffset.y = std::clamp(_contentOffset.y, minY, maxY);
+    }
 
-    bool _gestureActive;
-    float _gestureStartScale;
+    // --- Private Members ---
+    float _minimumZoomScale{1.0f};
+    float _maximumZoomScale{1.0f};
+    float _zoomScale{1.0f};
+    tgfx::Size _bounds{0.0f, 0.0f};
+    tgfx::Size _contentSize{0.0f, 0.0f};
+    tgfx::Point _contentOffset{0.0f, 0.0f};
+    EdgeInsets _contentInset{0.0f, 0.0f, 0.0f, 0.0f};
 };
-};  // namespace kk::ui
+
+}  // namespace kk::ui
 
 #endif /* ElasticZoomPanController_hpp */

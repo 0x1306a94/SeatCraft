@@ -24,6 +24,8 @@
 
 #include <filesystem>
 
+#define SHOW_MOCK_SEAT 0
+
 namespace fs = std::filesystem;
 
 namespace kk::drawers {
@@ -172,6 +174,8 @@ std::shared_ptr<tgfx::Layer> SeatLayerTree::buildLayerTree(tgfx::Canvas *canvas,
         root->addChild(areaLayer);
     }
 
+#if SHOW_MOCK_SEAT
+
 #if 0
     do {
         // 渲染座位 Mock
@@ -216,46 +220,48 @@ std::shared_ptr<tgfx::Layer> SeatLayerTree::buildLayerTree(tgfx::Canvas *canvas,
 
     } while (0);
 #else
-//    do {
-//        // 渲染座位 Mock
-//        auto iter = _seatStatusImageMap.find(1);
-//        if (iter == _seatStatusImageMap.end()) {
-//            break;
-//        }
-//
-//        auto bitmap = iter->second;
-//        auto bitmapWidth = bitmap->width();
-//        auto bitmapHeight = bitmap->height();
-//
-//        auto seatDomSize = tgfx::Size::Make(32, 32);
-//        float seatStartX = areaDomSize.width * 0.1;
-//        float seatStartY = areaDomSize.height * 0.1;
-//        float lineSpacing = 10.0f;
-//        float itemSpacing = 10.0f;
-//        int rows = 300, columns = 300;
-//
-//        auto scale = seatDomSize.width / static_cast<float>(bitmapWidth);
-//
-//        auto seatRootLayer = tgfx::Layer::Make();
-//
-//        for (int row = 0; row < rows; row++) {
-//            for (int col = 0; col < columns; col++) {
-//                float itemX = seatStartX + col * lineSpacing + col * seatDomSize.width;
-//                float itemY = seatStartY + row * itemSpacing + row * seatDomSize.height;
-//
-//                auto matrix = tgfx::Matrix::MakeScale(scale);
-//                matrix.postTranslate(itemX, itemY);
-//                auto seatLayer = tgfx::ImageLayer::Make();
-//                seatLayer->setImage(bitmap);
-//                seatLayer->setMatrix(matrix);
-//                seatRootLayer->addChild(seatLayer);
-//            }
-//        }
-//
-//        _seatLayer = seatRootLayer;
-//        root->addChild(seatRootLayer);
-//
-//    } while (0);
+    do {
+        // 渲染座位 Mock
+        auto iter = _seatStatusImageMap.find(1);
+        if (iter == _seatStatusImageMap.end()) {
+            break;
+        }
+
+        auto bitmap = iter->second;
+        auto bitmapWidth = bitmap->width();
+        auto bitmapHeight = bitmap->height();
+
+        auto seatDomSize = tgfx::Size::Make(32, 32);
+        float seatStartX = areaDomSize.width * 0.1;
+        float seatStartY = areaDomSize.height * 0.1;
+        float lineSpacing = 10.0f;
+        float itemSpacing = 10.0f;
+        int rows = 300, columns = 300;
+
+        auto scale = seatDomSize.width / static_cast<float>(bitmapWidth);
+
+        auto seatRootLayer = tgfx::Layer::Make();
+
+        for (int row = 0; row < rows; row++) {
+            for (int col = 0; col < columns; col++) {
+                float itemX = seatStartX + col * lineSpacing + col * seatDomSize.width;
+                float itemY = seatStartY + row * itemSpacing + row * seatDomSize.height;
+
+                auto matrix = tgfx::Matrix::MakeScale(scale);
+                matrix.postTranslate(itemX, itemY);
+                auto seatLayer = tgfx::ImageLayer::Make();
+                seatLayer->setImage(bitmap);
+                seatLayer->setMatrix(matrix);
+                seatRootLayer->addChild(seatLayer);
+            }
+        }
+
+        _seatLayer = seatRootLayer;
+        root->addChild(seatRootLayer);
+
+    } while (0);
+#endif
+
 #endif
 
     return root;
@@ -273,27 +279,27 @@ void SeatLayerTree::updateRootMatrix(tgfx::Canvas *canvas, const kk::SeatCraftCo
         return;
     }
 
-    auto bounds = _root->getBounds();  // 原始SVG的边界
+    //    auto bounds = _root->getBounds();  // 原始SVG的边界
 
-    auto surface = canvas->getSurface();
-    auto surfaceWidth = surface->width();
-    auto surfaceHeight = surface->height();
+    //    auto surface = canvas->getSurface();
+    //    auto surfaceWidth = surface->width();
+    //    auto surfaceHeight = surface->height();
 
     // 计算缩放比例（等比例缩放，保证完整显示）
-    const float scaleX = limitSize.width / bounds.width();
-    const float scaleY = limitSize.height / bounds.height();
+    const float scaleX = limitSize.width / _areaDomSize.width;
+    const float scaleY = limitSize.height / _areaDomSize.height;
     const float fitScale = std::min(scaleX, scaleY);
 
-    // 原始SVG中心点
-    const tgfx::Point svgCenter(bounds.centerX(), bounds.centerY());
-    // Canvas中心点
-    const tgfx::Point canvasCenter(surfaceWidth * 0.5f, surfaceHeight * 0.5f);
+    //    // 原始SVG中心点
+    //    const tgfx::Point svgCenter(bounds.centerX(), bounds.centerY());
+    //    // Canvas中心点
+    //    const tgfx::Point canvasCenter(surfaceWidth * 0.5f, surfaceHeight * 0.5f);
 
     // 构建矩阵：先移到原点 → 缩放 → 移到Canvas中心
     tgfx::Matrix finalMatrix = tgfx::Matrix::I();
-    finalMatrix.postTranslate(-svgCenter.x, -svgCenter.y);
+    //    finalMatrix.postTranslate(-svgCenter.x, -svgCenter.y);
     finalMatrix.postScale(fitScale, fitScale);
-    finalMatrix.postTranslate(canvasCenter.x, canvasCenter.y);
+    //    finalMatrix.postTranslate(canvasCenter.x, canvasCenter.y);
 
     _root->setMatrix(finalMatrix);
 }

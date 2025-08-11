@@ -15,9 +15,13 @@
 
 #import "../../core/SeatCraftCoreApp.hpp"
 #import "../../core/renderer/SeatCraftCoreRenderer.hpp"
+#import "../../core/ui/ElasticZoomPanController.hpp"
 
 #import "./renderer/IOSRendererBackend.h"
 
+#define USE_UISCROLLVIEW_TRICK 1
+
+#if USE_UISCROLLVIEW_TRICK
 @interface KKSeatCraftCoreAuxiliaryScrollView : UIScrollView
 @property (nonatomic, strong, nullable) void (^didLayoutSubviews)(KKSeatCraftCoreAuxiliaryScrollView *scrollView);
 @end
@@ -46,22 +50,26 @@
 //}
 
 @end
+#endif
 
 @interface KKSeatCraftCoreView () <KKSeatCraftCoreBackendViewDelegate, UIGestureRecognizerDelegate, UIScrollViewDelegate>
 @property (nonatomic, strong) KKSeatCraftCoreBackendView *backendView;
+#if USE_UISCROLLVIEW_TRICK
 @property (nonatomic, strong) KKSeatCraftCoreAuxiliaryScrollView *scrollView;
 @property (nonatomic, strong) UIView *zoomContentView;
+#endif
 
-@property (nonatomic, assign) CGSize selfSize;
-@property (nonatomic, assign) CGFloat svgScale;
-@property (nonatomic, assign) CGFloat zoomScale9;
-@property (nonatomic, assign) CGFloat zoomScale18;
-@property (nonatomic, assign) CGFloat zoomScale30;
-@property (nonatomic, assign) CGFloat zoomScale50;
+/// svg 缩放比例， 默认 1.0
+@property (nonatomic, assign) float svgScale;
+
+/// 多个缩放级别
+@property (nonatomic, assign) float zoomScale9;
+@property (nonatomic, assign) float zoomScale18;
+@property (nonatomic, assign) float zoomScale30;
+@property (nonatomic, assign) float zoomScale50;
 
 @property (nonatomic, assign) BOOL isTapEnabled;
 @property (nonatomic, strong) CADisplayLink *displayLink;
-@property (nonatomic, assign) CGSize contentSize;
 
 @property (nonatomic, strong) NSString *areaSVGPath;
 @property (nonatomic, strong) KKSeatCraftCoreSeatStatusSvgPathMap *seatStatusSvgPathMap;
@@ -69,6 +77,7 @@
 
 @implementation KKSeatCraftCoreView {
     std::shared_ptr<kk::SeatCraftCoreApp> _app;
+    std::unique_ptr<kk::ui::ElasticZoomPanController> _zoomPanController;
     std::unique_ptr<kk::renderer::SeatCraftCoreRenderer> _renderer;
 }
 
@@ -78,18 +87,6 @@
 #if DEBUG
     NSLog(@"[%@ dealloc]", NSStringFromClass(self.class));
 #endif
-}
-
-- (void)layoutSubviews {
-    [super layoutSubviews];
-    CGSize size = self.bounds.size;
-    if (!CGSizeEqualToSize(size, self.selfSize) && CGSizeEqualToSize(size, CGSizeZero)) {
-        self.selfSize = size;
-        [self updateContentSize];
-    }
-
-    [self adjustZoomContentViewCenter];
-    _renderer->draw(true);
 }
 
 - (void)didMoveToWindow {
@@ -120,10 +117,8 @@
 
 #pragma mark - Initial Methods
 - (void)commonInit {
-    /*custom view u want draw in here*/
     self.backgroundColor = [UIColor whiteColor];
 
-    self.selfSize = CGSizeZero;
     self.svgScale = 1.0;
     self.seatStatusSvgPathMap = [[KKSeatCraftCoreSeatStatusSvgPathMap alloc] init];
 
@@ -133,6 +128,7 @@
     _app = std::make_shared<kk::SeatCraftCoreApp>();
     auto backend = std::make_unique<kk::renderer::IOSRendererBackend>((CAEAGLLayer *)self.backendView.layer);
     _renderer = std::make_unique<kk::renderer::SeatCraftCoreRenderer>(_app, std::move(backend));
+    _zoomPanController = std::make_unique<kk::ui::ElasticZoomPanController>();
 }
 
 - (void)setupViews {
@@ -141,14 +137,18 @@
     _backendView.contentScaleFactor = UIScreen.mainScreen.scale;
     _backendView.delegate = self;
 
+    [self addSubview:_backendView];
+
+#if USE_UISCROLLVIEW_TRICK
     _scrollView = [[KKSeatCraftCoreAuxiliaryScrollView alloc] initWithFrame:self.bounds];
+    _scrollView.userInteractionEnabled = NO;
     _scrollView.translatesAutoresizingMaskIntoConstraints = NO;
     _scrollView.delegate = self;
     _scrollView.alwaysBounceHorizontal = YES;
     _scrollView.alwaysBounceVertical = YES;
     __weak typeof(self) weakSelf = self;
     _scrollView.didLayoutSubviews = ^(KKSeatCraftCoreAuxiliaryScrollView *scrollView) {
-        [weakSelf onScrollViewLayoutSubviews];
+        [weakSelf updateRendererWithScrollViewState];
     };
 
     _zoomContentView = [[UIView alloc] initWithFrame:self.bounds];
@@ -158,34 +158,97 @@
     [self addSubview:_scrollView];
     [_scrollView addSubview:_zoomContentView];
     [self addGestureRecognizer:_scrollView.panGestureRecognizer];
-
-    [self addSubview:_backendView];
+#endif
 
     [NSLayoutConstraint activateConstraints:@[
         [_backendView.leadingAnchor constraintEqualToAnchor:self.leadingAnchor],
         [_backendView.topAnchor constraintEqualToAnchor:self.topAnchor],
         [_backendView.trailingAnchor constraintEqualToAnchor:self.trailingAnchor],
         [_backendView.bottomAnchor constraintEqualToAnchor:self.bottomAnchor],
+#if USE_UISCROLLVIEW_TRICK
         [_scrollView.leadingAnchor constraintEqualToAnchor:self.leadingAnchor],
         [_scrollView.topAnchor constraintEqualToAnchor:self.topAnchor],
         [_scrollView.trailingAnchor constraintEqualToAnchor:self.trailingAnchor],
         [_scrollView.bottomAnchor constraintEqualToAnchor:self.bottomAnchor],
+#endif
     ]];
 }
 
 - (void)setupGesture {
 
-    UITapGestureRecognizer *tap =
-        [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleBackendViewClicked:)];
-    [self.backendView addGestureRecognizer:tap];
+#if !USE_UISCROLLVIEW_TRICK
+    UIPanGestureRecognizer *pan =
+        [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handlePan:)];
+    pan.delegate = self;
+    [self.backendView addGestureRecognizer:pan];
+
+    UIPinchGestureRecognizer *pinch =
+        [[UIPinchGestureRecognizer alloc] initWithTarget:self action:@selector(handlePinch:)];
+    pinch.delegate = self;
+    [self.backendView addGestureRecognizer:pinch];
+#endif
 }
 
-- (void)handleBackendViewClicked:(UITapGestureRecognizer *)gesture {
-    // TODO:
+#if !USE_UISCROLLVIEW_TRICK
+- (void)handlePan:(UIPanGestureRecognizer *)gesture {
+    if (gesture.state == UIGestureRecognizerStateBegan) {
+        self.isTapEnabled = NO;
+    }
+
+    if (gesture.state == UIGestureRecognizerStateEnded) {
+        self.isTapEnabled = YES;
+        return;
+    }
+
+    CGPoint translation = [gesture translationInView:self.backendView];
+    CGFloat contentScaleFactor = self.backendView.contentScaleFactor;
+    translation.x *= contentScaleFactor;
+    translation.y *= contentScaleFactor;
+
+    tgfx::Point delta = tgfx::Point{
+        static_cast<float>(translation.x),
+        static_cast<float>(translation.y),
+    };
+    _zoomPanController->handlePan(delta);
+
+    [gesture setTranslation:CGPointZero inView:self.backendView];
+
+    [self updateZoomPanControllerState];
+}
+
+- (void)handlePinch:(UIPinchGestureRecognizer *)gesture {
+    if (gesture.numberOfTouches != 2) {
+        return;
+    }
+
+    CGPoint centerInView = [gesture locationInView:self.backendView];
+    CGFloat contentScaleFactor = self.backendView.contentScaleFactor;
+    centerInView.x *= contentScaleFactor;
+    centerInView.y *= contentScaleFactor;
+
+    CGFloat gestureScale = gesture.scale;
+
+    _zoomPanController->handlePinch(gestureScale, tgfx::Point{static_cast<float>(centerInView.x), static_cast<float>(centerInView.y)});
+
+    gesture.scale = 1.0;
+
+    [self updateZoomPanControllerState];
+}
+#endif
+
+- (void)updateZoomPanControllerState {
+#if !USE_UISCROLLVIEW_TRICK
+
+    float currentZoom = _zoomPanController->getZoomScale();
+    tgfx::Point currentOffset = _zoomPanController->getContentOffset();
+
+    [self updateZoom:currentZoom contentOffset:currentOffset];
+#endif
 }
 
 - (void)setupDisplayLink {
     if (self.displayLink) {
+        [self.displayLink invalidate];
         self.displayLink = nil;
     }
 
@@ -221,115 +284,136 @@
     }
 }
 
-- (void)onScrollViewLayoutSubviews {
+- (void)updateMaxMinZoomScalesForCurrentBounds {
+    CGFloat boundsWidth = _zoomPanController->getBounds().width;
+    CGFloat contentWidth = _zoomPanController->getContentSize().width;
 
-    CGFloat zoomScale = self.scrollView.zoomScale;
-    CGFloat contentScaleFactor = self.backendView.contentScaleFactor;
-    CGPoint contentOffset = self.scrollView.contentOffset;
-    contentOffset.x *= contentScaleFactor;
-    contentOffset.y *= contentScaleFactor;
+    if (boundsWidth == 0.0 || contentWidth == 0.0) {
 
-    contentOffset.x = -contentOffset.x;
-    contentOffset.y = -contentOffset.y;
+        _zoomPanController->setMinimumZoomScale(1.0f);
+        _zoomPanController->setMaximumZoomScale(1.0f);
+        _zoomPanController->setZoomScale(1.0f);
 
-    [self updateZoom:zoomScale contentOffset:tgfx::Point{static_cast<float>(contentOffset.x), static_cast<float>(contentOffset.y)}];
+        self.zoomScale9 = 1.0f;
+        self.zoomScale18 = 1.0f;
+        self.zoomScale30 = 1.0f;
+        self.zoomScale50 = 1.0f;
+
+#if USE_UISCROLLVIEW_TRICK
+        self.scrollView.minimumZoomScale = 1.0f;
+        self.scrollView.maximumZoomScale = 1.0f;
+        self.scrollView.zoomScale = 1.0f;
+
+        if (self.scrollView.pinchGestureRecognizer && [self.backendView.gestureRecognizers containsObject:self.scrollView.pinchGestureRecognizer]) {
+            [self.backendView removeGestureRecognizer:self.scrollView.pinchGestureRecognizer];
+        }
+
+        [self adjustZoomContentViewCenter];
+        [self updateRendererWithScrollViewState];
+#else
+        [self updateZoomPanControllerState];
+#endif
+
+        return;
+    }
+
+    CGFloat svgScale = self.svgScale;
+    CGFloat svgModelScale = 1.0;
+
+    self.zoomScale9 = boundsWidth / ((svgScale * 36.0) / svgModelScale * 9.0);
+    self.zoomScale18 = boundsWidth / ((svgScale * 36.0) / svgModelScale * 18.0);
+    self.zoomScale30 = boundsWidth / ((svgScale * 36.0) / svgModelScale * 36.0);
+    self.zoomScale50 = boundsWidth / ((svgScale * 36.0) / svgModelScale * 50.0);
+
+    CGFloat minimumZoomScale = boundsWidth / contentWidth;
+    CGFloat baseScale = 1.0 / (svgScale / svgModelScale);
+    CGFloat maximumZoomScale = self.zoomScale9;
+    if (maximumZoomScale < baseScale) {
+        maximumZoomScale = baseScale;
+    }
+
+    _zoomPanController->setMinimumZoomScale(static_cast<float>(minimumZoomScale));
+    _zoomPanController->setMaximumZoomScale(static_cast<float>(maximumZoomScale));
+    _zoomPanController->setZoomScale(static_cast<float>(minimumZoomScale));
+
+#if USE_UISCROLLVIEW_TRICK
+    self.scrollView.minimumZoomScale = minimumZoomScale;
+    self.scrollView.maximumZoomScale = maximumZoomScale;
+    self.scrollView.zoomScale = minimumZoomScale;
+
+    if (self.scrollView.pinchGestureRecognizer && ![self.backendView.gestureRecognizers containsObject:self.scrollView.pinchGestureRecognizer]) {
+        [self.backendView addGestureRecognizer:self.scrollView.pinchGestureRecognizer];
+    }
+
+    [self adjustZoomContentViewCenter];
+    [self updateRendererWithScrollViewState];
+#else
+    [self updateZoomPanControllerState];
+#endif
 }
 
+- (void)updateContentSize {
+    auto svgSize = _app->getOriginSize();
+    auto density = _app->density();
+
+#if USE_UISCROLLVIEW_TRICK
+    do {
+        CGSize contentSize = CGSizeMake(svgSize.width * self.svgScale, svgSize.height * self.svgScale);
+        CGRect frame = CGRectMake(0, 0, contentSize.width, contentSize.height);
+        self.zoomContentView.bounds = frame;
+        self.scrollView.contentSize = contentSize;
+    } while (0);
+#endif
+
+    do {
+        tgfx::Size contentSize{
+            static_cast<float>(svgSize.width * self.svgScale * density),
+            static_cast<float>(svgSize.height * self.svgScale * density),
+        };
+
+        _zoomPanController->setContentSize(contentSize);
+        _app->updateContentSize(contentSize);
+    } while (0);
+
+    [self updateMaxMinZoomScalesForCurrentBounds];
+    _renderer->draw(true);
+}
+
+#if USE_UISCROLLVIEW_TRICK
 - (void)adjustZoomContentViewCenter {
     UIScrollView *scrollView = self.scrollView;
     CGFloat xcenter = scrollView.center.x, ycenter = scrollView.center.y;
     xcenter = scrollView.contentSize.width > scrollView.frame.size.width ? scrollView.contentSize.width / 2 : xcenter;
     ycenter = scrollView.contentSize.height > scrollView.frame.size.height ? scrollView.contentSize.height / 2 : ycenter;
     self.zoomContentView.center = CGPointMake(xcenter, ycenter);
+
+    [self updateRendererWithScrollViewState];
 }
 
-- (void)updateMaxMinZoomScalesForCurrentBounds {
+- (void)updateRendererWithScrollViewState {
+    CGFloat zoomScale = self.scrollView.zoomScale;
+    float contentScaleFactor = self.backendView.contentScaleFactor;
 
-    //    CGSize boundsSize = self.bounds.size;
-    //    CGSize contentViewSize = self.contentSize;
-    //
-    //    CGFloat widthScale = boundsSize.width / contentViewSize.width;
-    //    CGFloat heightScale = boundsSize.height / contentViewSize.height;
-    //    CGFloat minScale = fmin(fmin(widthScale, heightScale), 1.0);
-    //    CGFloat maxScale = boundsSize.width / 126.0;
-    //
-    //    if (UIDevice.currentDevice.userInterfaceIdiom == UIUserInterfaceIdiomPad) {
-    //        maxScale = 4.0;
-    //    }
-    //
-    //    self.scrollView.minimumZoomScale = minScale;
-    //    self.scrollView.maximumZoomScale = maxScale;
-    //    self.scrollView.zoomScale = minScale;
+    // 获取 UIScrollView 的 contentOffset 和 zoomContentView 的 frame.origin
+    // 它们都是点的单位
+    CGPoint scrollViewContentOffset = self.scrollView.contentOffset;
+    CGPoint zoomContentViewOrigin = self.zoomContentView.frame.origin;
 
-    CGFloat viewWidth = self.bounds.size.width;
-    CGFloat svgScale = self.svgScale;
-    CGFloat svgModelScale = 1.0;
+    // tgfx 所需的平移量是两者相减
+    // contentOffset的增加，意味着内容向左移动，所以需要减去
+    tgfx::Point tgfxOffsetPoints{
+        static_cast<float>(zoomContentViewOrigin.x - scrollViewContentOffset.x),
+        static_cast<float>(zoomContentViewOrigin.y - scrollViewContentOffset.y),
+    };
 
-    // 1. 计算不同级别下的缩放比例
-    self.zoomScale9 = viewWidth / ((svgScale * 36.0) / svgModelScale * 9.0);
-    self.zoomScale18 = viewWidth / ((svgScale * 36.0) / svgModelScale * 18.0);
-    self.zoomScale30 = viewWidth / ((svgScale * 36.0) / svgModelScale * 36.0);
-    self.zoomScale50 = viewWidth / ((svgScale * 36.0) / svgModelScale * 50.0);
+    // 将最终平移量转换为像素
+    tgfx::Point tgfxOffsetPixels{
+        static_cast<float>(tgfxOffsetPoints.x * contentScaleFactor),
+        static_cast<float>(tgfxOffsetPoints.y * contentScaleFactor),
+    };
 
-    // 计算一个基础缩放比例
-    CGFloat baseScale = 1.0 / (svgScale / svgModelScale);
-    CGFloat maximumZoomScale = self.zoomScale9;
-    // 确保最大缩放比例不小于这个基础比例
-    if (maximumZoomScale < baseScale) {
-        maximumZoomScale = baseScale;
-    }
-
-    // 2. 设置最大缩放比例 (maximumZoomScale)
-    self.scrollView.maximumZoomScale = maximumZoomScale;
-    // 3. 设置最小缩放比例 (minimumZoomScale)
-    CGFloat minimumZoomScale = viewWidth / self.contentSize.width;
-    self.scrollView.minimumZoomScale = minimumZoomScale;
-    self.scrollView.zoomScale = minimumZoomScale;
-
-    if (self.scrollView.pinchGestureRecognizer && ![self.gestureRecognizers containsObject:self.scrollView.pinchGestureRecognizer]) {
-        [self addGestureRecognizer:self.scrollView.pinchGestureRecognizer];
-    }
-
-    // 逻辑单位需要转为像素单位
-    CGFloat contentScaleFactor = self.backendView.contentScaleFactor;
-    CGPoint contentOffset = self.scrollView.contentOffset;
-    contentOffset.x *= contentScaleFactor;
-    contentOffset.y *= contentScaleFactor;
-
-    contentOffset.x = -contentOffset.x;
-    contentOffset.y = -contentOffset.y;
-
-    [self updateZoom:self.scrollView.zoomScale contentOffset:tgfx::Point{static_cast<float>(contentOffset.x), static_cast<float>(contentOffset.y)}];
-}
-
-- (void)configureWithSize:(CGSize)size {
-    self.scrollView.contentSize = size;
-    [self updateMaxMinZoomScalesForCurrentBounds];
-    _renderer->draw(true);
-}
-
-- (void)updateContentSize {
-
-    auto svgSize = _app->getOriginSize();
-    CGSize contentSize = CGSizeMake(svgSize.width * self.svgScale, svgSize.height * self.svgScale);
-
-    self.contentSize = contentSize;
-    auto density = _app->density();
-    _app->updateContentSize(tgfx::Size{static_cast<float>(contentSize.width * density), static_cast<float>(contentSize.height * density)});
-
-    CGRect frame = CGRectMake(0, 0, contentSize.width, contentSize.height);
-    self.zoomContentView.frame = frame;
-    [self configureWithSize:contentSize];
-}
-
-#pragma mark - KKSeatCraftCoreBackendViewDelegate
-- (void)seatCraftCoreBackendViewDidUpdateSize:(KKSeatCraftCoreBackendView *)backendView {
-    _renderer->updateSize();
-}
-
-#pragma mark - UIGestureRecognizerDelegate
-- (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer {
-    return YES;
+    // 将缩放和偏移量传递给 tgfx 渲染器
+    [self updateZoom:zoomScale contentOffset:tgfxOffsetPixels];
 }
 
 #pragma mark - UIScrollViewDelegate
@@ -339,10 +423,27 @@
 
 - (void)scrollViewDidZoom:(UIScrollView *)scrollView {
     [self adjustZoomContentViewCenter];
+    [self updateRendererWithScrollViewState];
 }
 
 - (void)scrollViewDidEndZooming:(UIScrollView *)scrollView withView:(nullable UIView *)view atScale:(CGFloat)scale {
     [self adjustZoomContentViewCenter];
+    [self updateRendererWithScrollViewState];
+}
+
+#endif
+
+#pragma mark - KKSeatCraftCoreBackendViewDelegate
+- (void)seatCraftCoreBackendViewDidUpdateSize:(KKSeatCraftCoreBackendView *)backendView {
+    _renderer->updateSize();
+    _zoomPanController->setBounds(_app->getBoundsSize());
+
+    [self updateContentSize];
+}
+
+#pragma mark - UIGestureRecognizerDelegate
+- (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer {
+    return YES;
 }
 
 #pragma mark - public
@@ -363,9 +464,9 @@
     _renderer->invalidateContent();
 
     auto svgSize = _app->getOriginSize();
-    CGFloat maxWidth = 1000.0;
-    CGFloat scale = 1.0;
-    if (svgSize.width > 0.0 && svgSize.width > maxWidth) {
+    float maxWidth = 1000.0f;
+    float scale = 1.0f;
+    if (svgSize.width > 0.0f && svgSize.width > maxWidth) {
         scale = maxWidth / svgSize.width;
     }
     self.svgScale = scale;
