@@ -83,9 +83,9 @@ void SeatCraftCoreRenderer::draw(bool force) {
     auto canvas = surface->getCanvas();
 
     auto appPtr = app.get();
-    _gridLayer->prepare(canvas, appPtr);
-    _seatLayer->prepare(canvas, appPtr);
-    _minimapLayer->prepare(canvas, appPtr);
+    _gridLayer->prepare(canvas, appPtr, force);
+    _seatLayer->prepare(canvas, appPtr, force);
+    _minimapLayer->prepare(canvas, appPtr, force);
 
     bool hasContentChanged = _gridLayer->hasContentChanged() ||
         _seatLayer->hasContentChanged() ||

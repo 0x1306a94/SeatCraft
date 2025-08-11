@@ -8,6 +8,7 @@
 #ifndef SeatCraftCoreApp_hpp
 #define SeatCraftCoreApp_hpp
 
+#include <memory>
 #include <string>
 #include <unordered_map>
 
@@ -15,6 +16,10 @@
 #include <tgfx/core/Size.h>
 
 #include "SeatStatusKey.h"
+
+namespace tgfx {
+class SVGDOM;
+};
 
 namespace kk {
 class SeatCraftCoreApp {
@@ -26,6 +31,10 @@ class SeatCraftCoreApp {
     tgfx::Size getBoundsSize() const;
 
     tgfx::Size getContentSize() const;
+
+    tgfx::Size getOriginSize() const;
+    
+    std::shared_ptr<tgfx::SVGDOM> getSvgDom() const;
 
     std::string getAreaSvgPath() const;
 
@@ -51,11 +60,13 @@ class SeatCraftCoreApp {
 
   private:
     tgfx::Size _boundSize{1280, 720};
-    tgfx::Size _contentSize{0, 0};
+    tgfx::Size _contentSize{};
+    tgfx::Size _originSize{};
     float _density = 1.0f;
     float _zoomScale = 1.0f;
     tgfx::Point _contentOffset = {};
     std::string _areaSvgPath{};
+    std::shared_ptr<tgfx::SVGDOM> _svgDom{nullptr};
     kk::SeatStatusSVGPathMap _seatStatusSvgMap{};
 };
 

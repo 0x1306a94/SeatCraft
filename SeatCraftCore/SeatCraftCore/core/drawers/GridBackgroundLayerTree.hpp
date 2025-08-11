@@ -25,7 +25,7 @@ class GridBackgroundLayerTree : public kk::drawers::Drawer {
 
     bool hasContentChanged() const;
 
-    virtual void prepare(tgfx::Canvas *canvas, const kk::SeatCraftCoreApp *app) override;
+    virtual void prepare(tgfx::Canvas *canvas, const kk::SeatCraftCoreApp *app, bool force) override;
 
   protected:
     virtual void onDraw(tgfx::Canvas *canvas, const kk::SeatCraftCoreApp *app) override;

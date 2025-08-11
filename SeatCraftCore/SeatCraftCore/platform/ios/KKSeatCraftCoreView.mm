@@ -15,7 +15,6 @@
 
 #import "../../core/SeatCraftCoreApp.hpp"
 #import "../../core/renderer/SeatCraftCoreRenderer.hpp"
-#import "../../core/ui/ElasticZoomPanController.hpp"
 
 #import "./renderer/IOSRendererBackend.h"
 
@@ -53,6 +52,13 @@
 @property (nonatomic, strong) KKSeatCraftCoreAuxiliaryScrollView *scrollView;
 @property (nonatomic, strong) UIView *zoomContentView;
 
+@property (nonatomic, assign) CGSize selfSize;
+@property (nonatomic, assign) CGFloat svgScale;
+@property (nonatomic, assign) CGFloat zoomScale9;
+@property (nonatomic, assign) CGFloat zoomScale18;
+@property (nonatomic, assign) CGFloat zoomScale30;
+@property (nonatomic, assign) CGFloat zoomScale50;
+
 @property (nonatomic, assign) BOOL isTapEnabled;
 @property (nonatomic, strong) CADisplayLink *displayLink;
 @property (nonatomic, assign) CGSize contentSize;
@@ -63,7 +69,6 @@
 
 @implementation KKSeatCraftCoreView {
     std::shared_ptr<kk::SeatCraftCoreApp> _app;
-    std::unique_ptr<kk::ui::ElasticZoomPanController> _gestureController;
     std::unique_ptr<kk::renderer::SeatCraftCoreRenderer> _renderer;
 }
 
@@ -77,6 +82,12 @@
 
 - (void)layoutSubviews {
     [super layoutSubviews];
+    CGSize size = self.bounds.size;
+    if (!CGSizeEqualToSize(size, self.selfSize) && CGSizeEqualToSize(size, CGSizeZero)) {
+        self.selfSize = size;
+        [self updateContentSize];
+    }
+
     [self adjustZoomContentViewCenter];
     _renderer->draw(true);
 }
@@ -112,6 +123,8 @@
     /*custom view u want draw in here*/
     self.backgroundColor = [UIColor whiteColor];
 
+    self.selfSize = CGSizeZero;
+    self.svgScale = 1.0;
     self.seatStatusSvgPathMap = [[KKSeatCraftCoreSeatStatusSvgPathMap alloc] init];
 
     [self setupViews];
@@ -120,7 +133,6 @@
     _app = std::make_shared<kk::SeatCraftCoreApp>();
     auto backend = std::make_unique<kk::renderer::IOSRendererBackend>((CAEAGLLayer *)self.backendView.layer);
     _renderer = std::make_unique<kk::renderer::SeatCraftCoreRenderer>(_app, std::move(backend));
-    _gestureController = std::make_unique<kk::ui::ElasticZoomPanController>(1000, 1000, 1000, 1000);
 }
 
 - (void)setupViews {
@@ -233,24 +245,46 @@
 
 - (void)updateMaxMinZoomScalesForCurrentBounds {
 
-    CGSize boundsSize = self.bounds.size;
-    CGSize contentViewSize = self.contentSize;
+    //    CGSize boundsSize = self.bounds.size;
+    //    CGSize contentViewSize = self.contentSize;
+    //
+    //    CGFloat widthScale = boundsSize.width / contentViewSize.width;
+    //    CGFloat heightScale = boundsSize.height / contentViewSize.height;
+    //    CGFloat minScale = fmin(fmin(widthScale, heightScale), 1.0);
+    //    CGFloat maxScale = boundsSize.width / 126.0;
+    //
+    //    if (UIDevice.currentDevice.userInterfaceIdiom == UIUserInterfaceIdiomPad) {
+    //        maxScale = 4.0;
+    //    }
+    //
+    //    self.scrollView.minimumZoomScale = minScale;
+    //    self.scrollView.maximumZoomScale = maxScale;
+    //    self.scrollView.zoomScale = minScale;
 
-    CGFloat widthScale = boundsSize.width / contentViewSize.width;
-    CGFloat heightScale = boundsSize.height / contentViewSize.height;
-    CGFloat minScale = fmin(fmin(widthScale, heightScale), 1.0);
-    CGFloat maxScale = boundsSize.width / 126.0;
+    CGFloat viewWidth = self.bounds.size.width;
+    CGFloat svgScale = self.svgScale;
+    CGFloat svgModelScale = 1.0;
 
-    if (UIDevice.currentDevice.userInterfaceIdiom == UIUserInterfaceIdiomPad) {
-        maxScale = 4.0;
+    // 1. 计算不同级别下的缩放比例
+    self.zoomScale9 = viewWidth / ((svgScale * 36.0) / svgModelScale * 9.0);
+    self.zoomScale18 = viewWidth / ((svgScale * 36.0) / svgModelScale * 18.0);
+    self.zoomScale30 = viewWidth / ((svgScale * 36.0) / svgModelScale * 36.0);
+    self.zoomScale50 = viewWidth / ((svgScale * 36.0) / svgModelScale * 50.0);
+
+    // 计算一个基础缩放比例
+    CGFloat baseScale = 1.0 / (svgScale / svgModelScale);
+    CGFloat maximumZoomScale = self.zoomScale9;
+    // 确保最大缩放比例不小于这个基础比例
+    if (maximumZoomScale < baseScale) {
+        maximumZoomScale = baseScale;
     }
 
-    self.scrollView.minimumZoomScale = minScale;
-    self.scrollView.maximumZoomScale = maxScale;
-    self.scrollView.zoomScale = minScale;
-
-    _gestureController->setScaleRange(minScale, maxScale);
-    _gestureController->setScale(minScale);
+    // 2. 设置最大缩放比例 (maximumZoomScale)
+    self.scrollView.maximumZoomScale = maximumZoomScale;
+    // 3. 设置最小缩放比例 (minimumZoomScale)
+    CGFloat minimumZoomScale = viewWidth / self.contentSize.width;
+    self.scrollView.minimumZoomScale = minimumZoomScale;
+    self.scrollView.zoomScale = minimumZoomScale;
 
     if (self.scrollView.pinchGestureRecognizer && ![self.gestureRecognizers containsObject:self.scrollView.pinchGestureRecognizer]) {
         [self addGestureRecognizer:self.scrollView.pinchGestureRecognizer];
@@ -265,7 +299,7 @@
     contentOffset.x = -contentOffset.x;
     contentOffset.y = -contentOffset.y;
 
-    [self updateZoom:minScale contentOffset:tgfx::Point{static_cast<float>(contentOffset.x), static_cast<float>(contentOffset.y)}];
+    [self updateZoom:self.scrollView.zoomScale contentOffset:tgfx::Point{static_cast<float>(contentOffset.x), static_cast<float>(contentOffset.y)}];
 }
 
 - (void)configureWithSize:(CGSize)size {
@@ -274,46 +308,23 @@
     _renderer->draw(true);
 }
 
-- (void)updateSeatStatusSVGPathMap {
-    auto seatSvgMap = [self.seatStatusSvgPathMap getMap];
-    _app->updateSeatStatusSVGPathMap(std::move(seatSvgMap));
-    _renderer->invalidateContent();
-    _renderer->draw(true);
-}
+- (void)updateContentSize {
 
-- (void)updateContentSize:(CGSize)contentSize {
+    auto svgSize = _app->getOriginSize();
+    CGSize contentSize = CGSizeMake(svgSize.width * self.svgScale, svgSize.height * self.svgScale);
+
     self.contentSize = contentSize;
-
     auto density = _app->density();
     _app->updateContentSize(tgfx::Size{static_cast<float>(contentSize.width * density), static_cast<float>(contentSize.height * density)});
-    _gestureController->updateSVGSize(static_cast<float>(contentSize.width * density), static_cast<float>(contentSize.height * density));
 
     CGRect frame = CGRectMake(0, 0, contentSize.width, contentSize.height);
     self.zoomContentView.frame = frame;
     [self configureWithSize:contentSize];
 }
 
-- (void)updateAreaSVG:(NSString *)path {
-    self.areaSVGPath = path;
-    if (path != nil) {
-        _app->updateAreaSvgPath(path.UTF8String);
-    } else {
-        _app->updateAreaSvgPath("");
-    }
-
-    _renderer->invalidateContent();
-}
-
-- (void)updateSeatStatusSvgPathMap:(KKSeatCraftCoreSeatStatusSvgPathMap *)seatStatusSvgPathMap {
-    self.seatStatusSvgPathMap = seatStatusSvgPathMap;
-    [self updateSeatStatusSVGPathMap];
-}
-
 #pragma mark - KKSeatCraftCoreBackendViewDelegate
 - (void)seatCraftCoreBackendViewDidUpdateSize:(KKSeatCraftCoreBackendView *)backendView {
     _renderer->updateSize();
-    auto boundsSize = _app->getBoundsSize();
-    _gestureController->updateCanvasSize(boundsSize.width, boundsSize.height);
 }
 
 #pragma mark - UIGestureRecognizerDelegate
@@ -333,4 +344,38 @@
 - (void)scrollViewDidEndZooming:(UIScrollView *)scrollView withView:(nullable UIView *)view atScale:(CGFloat)scale {
     [self adjustZoomContentViewCenter];
 }
+
+#pragma mark - public
+- (void)updateSeatStatusSVGPathMap {
+    auto seatSvgMap = [self.seatStatusSvgPathMap getMap];
+    _app->updateSeatStatusSVGPathMap(std::move(seatSvgMap));
+    _renderer->invalidateContent();
+    _renderer->draw(true);
+}
+
+- (void)updateAreaSVG:(NSString *)path {
+    self.areaSVGPath = path;
+    if (path != nil) {
+        _app->updateAreaSvgPath(path.UTF8String);
+    } else {
+        _app->updateAreaSvgPath("");
+    }
+    _renderer->invalidateContent();
+
+    auto svgSize = _app->getOriginSize();
+    CGFloat maxWidth = 1000.0;
+    CGFloat scale = 1.0;
+    if (svgSize.width > 0.0 && svgSize.width > maxWidth) {
+        scale = maxWidth / svgSize.width;
+    }
+    self.svgScale = scale;
+
+    [self updateContentSize];
+}
+
+- (void)updateSeatStatusSvgPathMap:(KKSeatCraftCoreSeatStatusSvgPathMap *)seatStatusSvgPathMap {
+    self.seatStatusSvgPathMap = seatStatusSvgPathMap;
+    [self updateSeatStatusSVGPathMap];
+}
+
 @end

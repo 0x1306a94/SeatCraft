@@ -7,7 +7,10 @@
 
 #include "SeatCraftCoreApp.hpp"
 
+#include "./svg/SVGLoader.hpp"
+
 #include <tgfx/platform/Print.h>
+#include <tgfx/svg/SVGDOM.h>
 
 #include <filesystem>
 
@@ -28,6 +31,18 @@ tgfx::Size SeatCraftCoreApp::getBoundsSize() const {
 
 tgfx::Size SeatCraftCoreApp::getContentSize() const {
     return _contentSize;
+}
+
+tgfx::Size SeatCraftCoreApp::getOriginSize() const {
+    tgfx::Size size{};
+    if (_svgDom) {
+        size = _svgDom->getContainerSize();
+    }
+    return size;
+}
+
+std::shared_ptr<tgfx::SVGDOM> SeatCraftCoreApp::getSvgDom() const {
+    return _svgDom;
 }
 
 std::string SeatCraftCoreApp::getAreaSvgPath() const {
@@ -79,16 +94,19 @@ bool SeatCraftCoreApp::updateZoomAndOffset(float zoomScale, const tgfx::Point &c
 
 bool SeatCraftCoreApp::updateAreaSvgPath(const std::string &path) {
     if (_areaSvgPath == path) {
+        _svgDom = nullptr;
         return false;
     }
 
     namespace fs = std::filesystem;
     if (!fs::exists(path)) {
         tgfx::PrintError("SeatCraftCoreApp::updateAreaSvgPath() path does not exist!");
+        _svgDom = nullptr;
         return false;
     }
 
     _areaSvgPath = path;
+    _svgDom = kk::svg::loadSvgDom(path);
     return true;
 }
 

@@ -86,7 +86,7 @@ bool GridBackgroundLayerTree::hasContentChanged() const {
     return _displayList->hasContentChanged();
 }
 
-void GridBackgroundLayerTree::prepare(tgfx::Canvas *canvas, const kk::SeatCraftCoreApp *app) {
+void GridBackgroundLayerTree::prepare(tgfx::Canvas *canvas, const kk::SeatCraftCoreApp *app, bool force) {
     if (_root != nullptr) {
         _root->setContentSize(app->getBoundsSize());
         _root->setDensity(app->density());

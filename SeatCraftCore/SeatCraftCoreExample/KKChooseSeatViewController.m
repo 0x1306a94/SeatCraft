@@ -31,16 +31,6 @@
     NSString *svgPath = [bundle pathForResource:@"performbg_2" ofType:@"svg"];
     [self.seatCraftView updateAreaSVG:svgPath];
     [self.seatCraftView updateSeatStatusSvgPathMap:seatStatusSvgPathMap];
-    CGSize svgSize = CGSizeMake(8204, 6916);
-    CGFloat maxWidth = 1000.0;
-    CGFloat scale = 1.0;
-    if (svgSize.width > 0.0 && svgSize.width > maxWidth) {
-        scale = maxWidth / svgSize.width;
-    }
-
-    CGFloat boxWidth = svgSize.width * scale;
-    CGFloat boxHeight = svgSize.height * scale;
-    [self.seatCraftView updateContentSize:CGSizeMake(boxWidth, boxHeight)];
 }
 
 - (void)viewDidLayoutSubviews {

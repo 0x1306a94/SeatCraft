@@ -29,7 +29,7 @@ class SeatLayerTree : public kk::drawers::Drawer {
 
     virtual ~SeatLayerTree();
     bool hasContentChanged() const;
-    virtual void prepare(tgfx::Canvas *canvas, const kk::SeatCraftCoreApp *app) override;
+    virtual void prepare(tgfx::Canvas *canvas, const kk::SeatCraftCoreApp *app, bool force) override;
 
   protected:
     bool updateContentSize(const kk::SeatCraftCoreApp *app);
@@ -42,6 +42,7 @@ class SeatLayerTree : public kk::drawers::Drawer {
     tgfx::Size _contentSize{};
     tgfx::Size _areaDomSize{};
     std::shared_ptr<tgfx::Layer> _root{nullptr};
+    std::shared_ptr<tgfx::Layer> _seatLayer{nullptr};
     std::unique_ptr<tgfx::DisplayList> _displayList{nullptr};
     std::unordered_map<kk::SeatStatusKey, std::shared_ptr<tgfx::Image>> _seatStatusImageMap{};
 };

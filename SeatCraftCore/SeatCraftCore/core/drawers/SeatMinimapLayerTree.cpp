@@ -127,7 +127,7 @@ bool SeatMinimapLayerTree::hasContentChanged() const {
     return _displayList->hasContentChanged();
 }
 
-void SeatMinimapLayerTree::prepare(tgfx::Canvas *canvas, const kk::SeatCraftCoreApp *app) {
+void SeatMinimapLayerTree::prepare(tgfx::Canvas *canvas, const kk::SeatCraftCoreApp *app, bool force) {
     if (updateContaierSize(app) && _root != nullptr) {
         _lineBox->removeFromParent();
         _root->removeFromParent();

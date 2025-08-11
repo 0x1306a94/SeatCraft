@@ -31,6 +31,7 @@ namespace kk::drawers {
 SeatLayerTree::SeatLayerTree()
     : kk::drawers::Drawer("SeatLayerTree")
     , _root(nullptr)
+    , _seatLayer(nullptr)
     , _displayList(std::make_unique<tgfx::DisplayList>()) {
 }
 
@@ -45,10 +46,25 @@ bool SeatLayerTree::hasContentChanged() const {
     return _displayList->hasContentChanged();
 }
 
-void SeatLayerTree::prepare(tgfx::Canvas *canvas, const kk::SeatCraftCoreApp *app) {
+void SeatLayerTree::prepare(tgfx::Canvas *canvas, const kk::SeatCraftCoreApp *app, bool force) {
     if (updateContentSize(app) && _root != nullptr) {
+        _seatLayer->removeFromParent();
+        _seatLayer = nullptr;
+
         _root->removeFromParent();
         _root = nullptr;
+    }
+
+    if (force) {
+        if (_seatLayer) {
+            _seatLayer->removeFromParent();
+            _seatLayer = nullptr;
+        }
+
+        if (_root) {
+            _root->removeFromParent();
+            _root = nullptr;
+        }
     }
 
     updateRootMatrix(canvas, app);
@@ -143,7 +159,11 @@ bool SeatLayerTree::prebuildSeatStatusBitmap(tgfx::Canvas *canvas, const kk::Sea
 std::shared_ptr<tgfx::Layer> SeatLayerTree::buildLayerTree(tgfx::Canvas *canvas, const kk::SeatCraftCoreApp *app) {
 
     auto root = tgfx::Layer::Make();
-    auto areaSvgDom = kk::svg::loadSvgDom(app->getAreaSvgPath());
+    auto areaSvgDom = app->getSvgDom();
+    if (areaSvgDom == nullptr) {
+        return root;
+    }
+
     auto areaDomSize = areaSvgDom->getContainerSize();
     auto areaLayer = kk::svg::convertSVGDomToLayer(areaSvgDom);
     if (areaLayer) {
@@ -178,18 +198,19 @@ std::shared_ptr<tgfx::Layer> SeatLayerTree::buildLayerTree(tgfx::Canvas *canvas,
 
         for (int row = 0; row < rows; row++) {
             for (int col = 0; col < columns; col++) {
-                float itemX = seatStartX + row * lineSpacing + row * seatDomSize.width;
-                float itemY = seatStartY + col * itemSpacing + col * seatDomSize.height;
+                float itemX = seatStartX + col * lineSpacing + col * seatDomSize.width;
+                float itemY = seatStartY + row * itemSpacing + row * seatDomSize.height;
 
                 auto seatLayer = kk::svg::convertSVGDomToLayer(seatSvgDom);
                 if (seatLayer) {
+                    seatLayer->setShouldRasterize(true);
                     auto matrix = tgfx::Matrix::MakeTrans(itemX, itemY);
                     seatLayer->setMatrix(matrix);
                     seatRootLayer->addChild(seatLayer);
                 }
             }
         }
-
+        _seatLayer = seatRootLayer;
         root->addChild(seatRootLayer);
 
     } while (0);
@@ -210,7 +231,7 @@ std::shared_ptr<tgfx::Layer> SeatLayerTree::buildLayerTree(tgfx::Canvas *canvas,
         float seatStartY = areaDomSize.height * 0.1;
         float lineSpacing = 10.0f;
         float itemSpacing = 10.0f;
-        int rows = 100, columns = 200;
+        int rows = 300, columns = 300;
 
         auto scale = seatDomSize.width / static_cast<float>(bitmapWidth);
 
@@ -230,6 +251,7 @@ std::shared_ptr<tgfx::Layer> SeatLayerTree::buildLayerTree(tgfx::Canvas *canvas,
             }
         }
 
+        _seatLayer = seatRootLayer;
         root->addChild(seatRootLayer);
 
     } while (0);
@@ -262,9 +284,9 @@ void SeatLayerTree::updateRootMatrix(tgfx::Canvas *canvas, const kk::SeatCraftCo
     const tgfx::Point canvasCenter(surfaceWidth * 0.5f, surfaceHeight * 0.5f);
 
     tgfx::Matrix matrix = tgfx::Matrix::I();
-    matrix.postTranslate(-svgCenter.x, -svgCenter.y);      // 移动 SVG 到原点中心
-    matrix.postScale(fitScale, fitScale);                  // 缩放
-    matrix.postTranslate(canvasCenter.x, canvasCenter.y);  // 移动到 Canvas 中心
+    //    matrix.postTranslate(-svgCenter.x, -svgCenter.y);      // 移动 SVG 到原点中心
+    matrix.postScale(fitScale, fitScale);  // 缩放
+                                           //    matrix.postTranslate(canvasCenter.x, canvasCenter.y);  // 移动到 Canvas 中心
 
     _root->setMatrix(matrix);
 }
@@ -277,10 +299,9 @@ void SeatLayerTree::onDraw(tgfx::Canvas *canvas, const kk::SeatCraftCoreApp *app
         _root = buildLayerTree(canvas, app);
         _displayList->root()->addChild(_root);
         _displayList->setRenderMode(tgfx::RenderMode::Tiled);
-        // Zoom blur is currently disabled because the Hello2D demo doesn't yet support animation frame
-        // rendering with displayList:
         _displayList->setAllowZoomBlur(true);
         _displayList->setMaxTileCount(512);
+        _displayList->setMaxTilesRefinedPerFrame(512);
     }
 
     auto surface = canvas->getSurface();
