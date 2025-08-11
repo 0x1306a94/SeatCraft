@@ -28,12 +28,14 @@ class SeatCraftCoreApp {
 
     ~SeatCraftCoreApp();
 
+    /// canvas 尺寸
     tgfx::Size getBoundsSize() const;
-
+    /// 内容尺寸
     tgfx::Size getContentSize() const;
 
+    /// svg原始尺寸
     tgfx::Size getOriginSize() const;
-    
+
     std::shared_ptr<tgfx::SVGDOM> getSvgDom() const;
 
     std::string getAreaSvgPath() const;
@@ -44,10 +46,12 @@ class SeatCraftCoreApp {
         return _density;
     }
 
+    /// 当前缩放比例
     float zoomScale() const {
         return _zoomScale;
     }
 
+    /// 当前滑动偏移
     const tgfx::Point &contentOffset() const {
         return _contentOffset;
     }
@@ -59,8 +63,11 @@ class SeatCraftCoreApp {
     bool updateSeatStatusSVGPathMap(kk::SeatStatusSVGPathMap map);
 
   private:
+    /// canvas 尺寸
     tgfx::Size _boundSize{1280, 720};
+    /// 内容尺寸
     tgfx::Size _contentSize{};
+    /// svg原始尺寸
     tgfx::Size _originSize{};
     float _density = 1.0f;
     float _zoomScale = 1.0f;

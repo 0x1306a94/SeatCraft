@@ -32,6 +32,8 @@ class SeatLayerTree : public kk::drawers::Drawer {
     virtual void prepare(tgfx::Canvas *canvas, const kk::SeatCraftCoreApp *app, bool force) override;
 
   protected:
+    /// 更新内容尺寸
+    /// - Parameter app: app
     bool updateContentSize(const kk::SeatCraftCoreApp *app);
     bool prebuildSeatStatusBitmap(tgfx::Canvas *canvas, const kk::SeatCraftCoreApp *app);
     std::shared_ptr<tgfx::Layer> buildLayerTree(tgfx::Canvas *canvas, const kk::SeatCraftCoreApp *app);
@@ -39,7 +41,9 @@ class SeatLayerTree : public kk::drawers::Drawer {
     void onDraw(tgfx::Canvas *canvas, const kk::SeatCraftCoreApp *app) override;
 
   private:
+    // 限制的内容尺寸，无论svg原始尺寸多大。都不能超过这个内容尺寸，如果超过了则等比例缩放
     tgfx::Size _contentSize{};
+    // svg文件获取的原始尺寸
     tgfx::Size _areaDomSize{};
     std::shared_ptr<tgfx::Layer> _root{nullptr};
     std::shared_ptr<tgfx::Layer> _seatLayer{nullptr};
