@@ -1,0 +1,6 @@
+framework module SeatCraftAppPicker {
+  umbrella header "SeatCraftAppPicker.h"
+  export *
+
+  module * { export * }
+}

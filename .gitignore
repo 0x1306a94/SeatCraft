@@ -1,3 +1,7 @@
 /.vscode
 /.env
 /GEMINI.md
+/third_party/tgfx
+/ios/gen_xcode
+/build
+/build*
