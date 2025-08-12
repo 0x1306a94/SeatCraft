@@ -1,0 +1,9 @@
+{
+    global:
+        Java_com_seatcraft*;
+        alc*;
+        JNI_OnLoad*;
+        *kk*;
+    local:
+        *;
+};

@@ -21,8 +21,8 @@ class IOSRendererBackend : public RendererBackend {
     virtual float getDensity() override;
 
   private:
-    std::shared_ptr<tgfx::Window> window_{nullptr};
-    CAEAGLLayer *eagLayer;
+    std::shared_ptr<tgfx::Window> _window{nullptr};
+    CAEAGLLayer *_eagLayer;
 };
 
 };  // namespace kk::renderer

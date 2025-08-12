@@ -101,8 +101,8 @@ bool SeatLayerTree::prebuildSeatStatusBitmap(tgfx::Canvas *canvas, const kk::Sea
     auto statusSize = seatStatusSvgMap.size();
     auto columns = 4;
     auto rows = static_cast<int>(std::ceil(static_cast<float>(statusSize) / static_cast<float>(columns)));
-    auto lineSpacing = 10;
-    auto itemSpacing = 10;
+    int lineSpacing = 10;
+    int itemSpacing = 10;
 
     auto density = app->density();
     auto itemWidth = static_cast<int>(32 * density);
@@ -134,16 +134,16 @@ bool SeatLayerTree::prebuildSeatStatusBitmap(tgfx::Canvas *canvas, const kk::Sea
 
         rectsMap.emplace(key, tgfx::Rect::MakeXYWH(startX, startY, static_cast<float>(itemWidth), static_cast<float>(itemHeight)));
 
-        if ((startX + itemWidth + itemSpacing) >= (surfaceWidth - itemSpacing)) {
-            startX = itemSpacing;
+        if ((startX + static_cast<float>(itemWidth + itemSpacing)) >= static_cast<float>(surfaceWidth - itemSpacing)) {
+            startX = static_cast<float>(itemSpacing);
         } else {
-            startX += itemWidth + itemSpacing;
+            startX += static_cast<float>(itemWidth + itemSpacing);
         }
 
-        if ((startY + itemHeight + lineSpacing) >= (surfaceHeight - itemHeight)) {
-            startY = lineSpacing;
+        if ((startY + static_cast<float>(itemHeight + lineSpacing)) >= static_cast<float>(surfaceHeight - itemHeight)) {
+            startY = static_cast<float>(lineSpacing);
         } else {
-            startY += itemHeight + lineSpacing;
+            startY += static_cast<float>(itemHeight + lineSpacing);
         }
     }
 

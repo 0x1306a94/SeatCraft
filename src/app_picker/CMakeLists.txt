@@ -40,6 +40,21 @@ if(IOS)
     list(APPEND APP_PICKER_FILES ${APP_PICKER_PLATFORM_IOS_FILES})
 
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -exported_symbols_list ${SEAT_CRAFT_ROOT_DIR}/ios/SeatCraftAppPicker.lds")
+elseif(ANDROID)
+    find_library(LOG_LIB log)
+    list(APPEND SEAT_CRAFT_APP_PICKER_SHARED_LIBS ${LOG_LIB})
+    find_library(ANDROID_LIB android)
+    list(APPEND SEAT_CRAFT_APP_PICKER_SHARED_LIBS ${ANDROID_LIB})
+
+    file(GLOB_RECURSE APP_PICKER_PLATFORM_IOS_FILES
+        platform/android/*.h platform/android/*.hpp platform/android/*.cpp
+        platform/android/jni/*.h platform/android/jni/*.hpp platform/jni/*.cpp
+        platform/android/renderer/*.h platform/android/renderer/*.hpp platform/android/renderer/*.cpp
+    )
+    list(APPEND APP_PICKER_FILES ${APP_PICKER_PLATFORM_IOS_FILES})
+    if (NOT CMAKE_BUILD_TYPE MATCHES "Debug")
+        set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--gc-sections -Wl,--version-script=${SEAT_CRAFT_ROOT_DIR}/android/SeatCraftAppPicker.def")
+    endif ()
 endif()
 
 foreach(source_file IN LISTS APP_PICKER_FILES)
@@ -83,6 +98,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC ${SEAT_CRAFT_ROOT_INCLUDE_DIR}
 target_include_directories(${PROJECT_NAME} PRIVATE ${THIRD_PARTY_ROOT_DIR}/tgfx/include)
 target_include_directories(${PROJECT_NAME} PRIVATE .)
 target_link_libraries(${PROJECT_NAME} PRIVATE tgfx)
+target_link_libraries(${PROJECT_NAME} PUBLIC ${SEAT_CRAFT_APP_PICKER_SHARED_LIBS})
 
 if(MACOS OR IOS)
     set_target_properties(${PROJECT_NAME} PROPERTIES

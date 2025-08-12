@@ -17,7 +17,7 @@
 namespace kk::renderer {
 
 IOSRendererBackend::IOSRendererBackend(CAEAGLLayer *eagLayer)
-    : eagLayer(eagLayer) {
+    : _eagLayer(eagLayer) {
 }
 
 IOSRendererBackend::~IOSRendererBackend() {
@@ -25,24 +25,24 @@ IOSRendererBackend::~IOSRendererBackend() {
 }
 
 std::shared_ptr<tgfx::Window> IOSRendererBackend::getWindow() {
-    if (window_ == nullptr) {
-        window_ = tgfx::EAGLWindow::MakeFrom(eagLayer);
+    if (_window == nullptr) {
+        _window = tgfx::EAGLWindow::MakeFrom(eagLayer);
     }
-    return window_;
+    return _window;
 }
 
 int IOSRendererBackend::getWidth() {
-    auto width = static_cast<int>(roundf(static_cast<float>(eagLayer.bounds.size.width * eagLayer.contentsScale)));
+    auto width = static_cast<int>(roundf(static_cast<float>(_eagLayer.bounds.size.width * _eagLayer.contentsScale)));
     return width;
 }
 
 int IOSRendererBackend::getHeight() {
-    auto height = static_cast<int>(roundf(static_cast<float>(eagLayer.bounds.size.height * eagLayer.contentsScale)));
+    auto height = static_cast<int>(roundf(static_cast<float>(_eagLayer.bounds.size.height * _eagLayer.contentsScale)));
     return height;
 }
 
 float IOSRendererBackend::getDensity() {
-    float contentsScale = static_cast<float>(eagLayer.contentsScale);
+    float contentsScale = static_cast<float>(_eagLayer.contentsScale);
     return contentsScale;
 }
 

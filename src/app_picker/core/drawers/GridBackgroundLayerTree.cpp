@@ -51,8 +51,8 @@ class GridBackgroundLayer : public tgfx::Layer {
             return;
         }
         auto canvas = recorder->getCanvas();
-        auto width = _contentSize.width;
-        auto height = _contentSize.height;
+        auto width = static_cast<int>(_contentSize.width);
+        auto height = static_cast<int>(_contentSize.height);
         canvas->clear(tgfx::Color::White());
         tgfx::Paint paint = {};
         paint.setColor(tgfx::Color{0.8f, 0.8f, 0.8f, 1.f});
