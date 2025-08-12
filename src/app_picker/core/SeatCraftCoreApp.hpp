@@ -19,7 +19,8 @@
 
 namespace tgfx {
 class SVGDOM;
-};
+class Stream;
+};  // namespace tgfx
 
 namespace kk {
 class SeatCraftCoreApp {
@@ -60,6 +61,7 @@ class SeatCraftCoreApp {
     bool updateScreen(const tgfx::Size &boundSize, float density);
     bool updateZoomAndOffset(float zoomScale, const tgfx::Point &contentOffset);
     bool updateAreaSvgPath(const std::string &path);
+    bool updateAreaSvgData(std::unique_ptr<tgfx::Stream> data);
     bool updateSeatStatusSVGPathMap(kk::SeatStatusSVGPathMap map);
 
   private:

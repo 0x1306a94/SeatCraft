@@ -8,17 +8,17 @@
 #import <SeatCraftAppPicker/KKSeatCraftCoreSeatStatusSvgPathMap.h>
 #import <SeatCraftAppPicker/KKSeatCraftCoreView.h>
 
+#import <SeatCraft/common/common_macro.h>
+
 #import "KKSeatCraftCoreBackendView.h"
 
 #import "KKSeatCraftCoreSeatStatusSvgPathMap+Private.h"
 
-#import "../../core/SeatCraftCoreApp.hpp"
-#import "../../core/renderer/SeatCraftCoreRenderer.hpp"
-#import "../../core/ui/ElasticZoomPanController.hpp"
+#import "core/SeatCraftCoreApp.hpp"
+#import "core/renderer/SeatCraftCoreRenderer.hpp"
+#import "core/ui/ElasticZoomPanController.hpp"
 
-#import "./renderer/IOSRendererBackend.h"
-
-#import <SeatCraft/common/common_macro.h>
+#import "renderer/IOSRendererBackend.h"
 
 #define USE_UISCROLLVIEW_TRICK 1
 
@@ -228,7 +228,7 @@
     centerInView.x *= contentScaleFactor;
     centerInView.y *= contentScaleFactor;
 
-    CGFloat gestureScale = gesture.scale;
+    float gestureScale = static_cast<float>(gesture.scale);
 
     _zoomPanController->handlePinch(gestureScale, tgfx::Point{static_cast<float>(centerInView.x), static_cast<float>(centerInView.y)});
 

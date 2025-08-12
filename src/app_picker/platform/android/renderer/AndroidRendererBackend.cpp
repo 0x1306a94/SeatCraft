@@ -10,8 +10,10 @@
 
 namespace kk::renderer {
 
-AndroidRendererBackend::AndroidRendererBackend(ANativeWindow *nativeWindow)
-    : _nativeWindow(nativeWindow) {
+AndroidRendererBackend::AndroidRendererBackend(ANativeWindow *nativeWindow, float density)
+    : _nativeWindow(nativeWindow)
+    , _density(density) {
+    tgfx::PrintLog("AndroidRendererBackend::AndroidRendererBackend()");
 }
 
 AndroidRendererBackend::~AndroidRendererBackend() {
@@ -44,7 +46,7 @@ int AndroidRendererBackend::getHeight() {
 }
 
 float AndroidRendererBackend::getDensity() {
-    return 1.0;
+    return _density;
 }
 
 };  // namespace kk::renderer

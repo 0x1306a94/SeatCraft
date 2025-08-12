@@ -23,7 +23,7 @@
 
 namespace kk::renderer {
 SeatCraftCoreRenderer::SeatCraftCoreRenderer(std::shared_ptr<kk::SeatCraftCoreApp> app, std::unique_ptr<RendererBackend> backend)
-    : app(app)
+    : app(std::move(app))
     , backend(std::move(backend))
     , invalidate(true)
     , _gridLayer(std::make_unique<kk::drawers::GridBackgroundLayerTree>())

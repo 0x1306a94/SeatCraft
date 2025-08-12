@@ -9,17 +9,18 @@
 namespace kk::renderer {
 class AndroidRendererBackend : public RendererBackend {
   public:
-    explicit AndroidRendererBackend(ANativeWindow *nativeWindow);
-    virtual ~AndroidRendererBackend();
+    explicit AndroidRendererBackend(ANativeWindow *nativeWindow, float density);
+    ~AndroidRendererBackend();
 
-    virtual std::shared_ptr<tgfx::Window> getWindow() override;
-    virtual int getWidth() override;
-    virtual int getHeight() override;
-    virtual float getDensity() override;
+    std::shared_ptr<tgfx::Window> getWindow() override;
+    int getWidth() override;
+    int getHeight() override;
+    float getDensity() override;
 
   private:
     std::shared_ptr<tgfx::Window> _window{nullptr};
     ANativeWindow *_nativeWindow{nullptr};
+    float _density{1.0f};
 };
 
 };  // namespace kk::renderer

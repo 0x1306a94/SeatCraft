@@ -16,6 +16,7 @@ rm -rf $GEN_XCODE_PROJEC_DIR/cmake_install.cmake
 echo "[*] Generating ..."
 cmake -G Xcode \
 -B $GEN_XCODE_PROJEC_DIR \
+-DCMAKE_BUILD_TYPE=RelWithDebInfo \
 -DCMAKE_TOOLCHAIN_FILE=$PROJECT_DIR/cmake/ios.toolchain.cmake \
 -DPLATFORM=OS64 \
 -DCMAKE_XCODE_ATTRIBUTE_SUPPORTED_PLATFORMS="iphoneos" \

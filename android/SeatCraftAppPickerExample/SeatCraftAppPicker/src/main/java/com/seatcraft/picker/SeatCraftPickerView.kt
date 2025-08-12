@@ -1,10 +1,16 @@
 package com.seatcraft.picker
 
+import android.animation.ValueAnimator
 import android.view.TextureView
 import android.graphics.SurfaceTexture
 import android.view.Surface
 
 class SeatCraftPickerView : TextureView, TextureView.SurfaceTextureListener {
+    private var surface: Surface? = null
+    private var nativePtr: Long = 0
+    private var animator: ValueAnimator? = null
+    private var areaMapSvgData: ByteArray? = null;
+
     constructor(context: android.content.Context) : super(context) {
         setupSurfaceTexture()
     }
@@ -34,18 +40,46 @@ class SeatCraftPickerView : TextureView, TextureView.SurfaceTextureListener {
         }
     }
 
+    public fun setAreaMapSvgData(data: ByteArray) {
+        areaMapSvgData = data;
+        if (nativePtr == 0L) {
+            return
+        }
+        nativeSetAreaMapSvgData(data);
+    }
+
     private fun setupSurfaceTexture() {
         surfaceTextureListener = this
+    }
+
+    private fun startIfAnimatorNeeded() {
+        if (animator != null) {
+            return
+        }
+
+        animator = ValueAnimator.ofFloat(0f, 1f).apply {
+            repeatCount = ValueAnimator.INFINITE
+            addUpdateListener { animation ->
+                draw(false)
+            }
+            start()
+        }
     }
 
     override fun onSurfaceTextureAvailable(p0: SurfaceTexture, p1: Int, p2: Int) {
         release()
         val metrics = resources.displayMetrics
         surface = Surface(p0)
-        nativePtr = setupFromSurface(surface!!, metrics.density)
+        nativePtr = nativeSetupFromSurface(surface!!, metrics.density)
+        nativeUpdateSize();
+        nativeSetAreaMapSvgData(areaMapSvgData)
+        startIfAnimatorNeeded()
     }
 
     override fun onSurfaceTextureSizeChanged(p0: SurfaceTexture, p1: Int, p2: Int) {
+        if (nativePtr == 0L) {
+            return
+        }
         nativeUpdateSize()
     }
 
@@ -56,27 +90,32 @@ class SeatCraftPickerView : TextureView, TextureView.SurfaceTextureListener {
     override fun onSurfaceTextureUpdated(p0: SurfaceTexture) {
     }
 
-    fun release() {
+    private fun release() {
         if (surface != null) {
             surface!!.release()
             surface = null
         }
+        if (nativePtr == 0L) {
+            return
+        }
         nativeRelease()
     }
 
-    fun draw(force: Boolean) {
+    private fun draw(force: Boolean) {
+        if (nativePtr == 0L) {
+            return
+        }
         nativeDraw(force);
     }
 
+    private external fun nativeSetupFromSurface(surface: Surface, density: Float): Long;
+    private external fun nativeSetAreaMapSvgData(data: ByteArray?);
     private external fun nativeUpdateSize()
     private external fun nativeDraw(force: Boolean)
     private external fun nativeRelease()
-    private var surface: Surface? = null
-    private var nativePtr: Long = 0
 
     companion object {
         private external fun nativeInit()
-        private external fun setupFromSurface(surface: Surface, density: Float): Long
 
         init {
             System.loadLibrary("SeatCraftAppPicker")

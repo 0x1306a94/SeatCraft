@@ -13,10 +13,12 @@
 
 namespace tgfx {
 class SVGDOM;
+class Stream;
 };  // namespace tgfx
 
 namespace kk::svg {
 std::shared_ptr<tgfx::SVGDOM> loadSvgDom(const std::string &path);
+std::shared_ptr<tgfx::SVGDOM> loadSvgDom(tgfx::Stream *stream);
 };  // namespace kk::svg
 
 #endif /* SVGLoader_hpp */

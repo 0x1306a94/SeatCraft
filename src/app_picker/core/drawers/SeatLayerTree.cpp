@@ -54,8 +54,10 @@ void SeatLayerTree::prepare(tgfx::Canvas *canvas, const kk::SeatCraftCoreApp *ap
     prebuildSeatStatusBitmap(canvas, app);
 
     if (updateContentSize(app) && _root != nullptr) {
-        _seatLayer->removeFromParent();
-        _seatLayer = nullptr;
+        if (_seatLayer) {
+            _seatLayer->removeFromParent();
+            _seatLayer = nullptr;
+        }
 
         _root->removeFromParent();
         _root = nullptr;

@@ -27,6 +27,7 @@ android {
         externalNativeBuild {
             cmake {
                 val cmakeArgs: String? = project.findProperty("cmakeArgs") as String?
+                arguments.add("-DCMAKE_BUILD_TYPE=RelWithDebInfo")
                 arguments.add("-DANDROID_STL=c++_static")
                 if (!cmakeArgs.isNullOrEmpty()) {
                     arguments.addAll(cmakeArgs.split(" "))

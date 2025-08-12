@@ -9,6 +9,7 @@
 
 #include "svg/SVGLoader.hpp"
 
+#include <tgfx/core/Stream.h>
 #include <tgfx/platform/Print.h>
 #include <tgfx/svg/SVGDOM.h>
 
@@ -19,6 +20,7 @@ SeatCraftCoreApp::SeatCraftCoreApp(const tgfx::Size &boundSize, const tgfx::Size
     : _boundSize(boundSize)
     , _contentSize(contentSize)
     , _density(density) {
+    tgfx::PrintLog("SeatCraftCoreApp::SeatCraftCoreApp()");
 }
 
 SeatCraftCoreApp::~SeatCraftCoreApp() {
@@ -94,7 +96,6 @@ bool SeatCraftCoreApp::updateZoomAndOffset(float zoomScale, const tgfx::Point &c
 
 bool SeatCraftCoreApp::updateAreaSvgPath(const std::string &path) {
     if (_areaSvgPath == path) {
-        _svgDom = nullptr;
         return false;
     }
 
@@ -107,6 +108,16 @@ bool SeatCraftCoreApp::updateAreaSvgPath(const std::string &path) {
 
     _areaSvgPath = path;
     _svgDom = kk::svg::loadSvgDom(path);
+    return true;
+}
+
+bool SeatCraftCoreApp::updateAreaSvgData(std::unique_ptr<tgfx::Stream> data) {
+    if (data == nullptr) {
+        _svgDom = nullptr;
+        return true;
+    }
+
+    _svgDom = kk::svg::loadSvgDom(data.get());
     return true;
 }
 

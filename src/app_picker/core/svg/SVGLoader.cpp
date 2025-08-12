@@ -28,6 +28,10 @@ std::shared_ptr<tgfx::SVGDOM> loadSvgDom(const std::string &path) {
         return nullptr;
     }
 
+    return loadSvgDom(stream.get());
+}
+
+std::shared_ptr<tgfx::SVGDOM> loadSvgDom(tgfx::Stream *stream) {
     auto svgDom = tgfx::SVGDOM::Make(*stream);
     return svgDom;
 }

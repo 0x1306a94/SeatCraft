@@ -49,11 +49,15 @@ elseif(ANDROID)
     file(GLOB_RECURSE APP_PICKER_PLATFORM_IOS_FILES
         platform/android/*.h platform/android/*.hpp platform/android/*.cpp
         platform/android/jni/*.h platform/android/jni/*.hpp platform/jni/*.cpp
+        platform/android/ui/*.h platform/android/ui/*.hpp platform/ui/*.cpp
         platform/android/renderer/*.h platform/android/renderer/*.hpp platform/android/renderer/*.cpp
     )
     list(APPEND APP_PICKER_FILES ${APP_PICKER_PLATFORM_IOS_FILES})
-    if (NOT CMAKE_BUILD_TYPE MATCHES "Debug")
-        set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--gc-sections -Wl,--version-script=${SEAT_CRAFT_ROOT_DIR}/android/SeatCraftAppPicker.def")
+
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--gc-sections -Wl,--version-script=${SEAT_CRAFT_ROOT_DIR}/android/SeatCraftAppPicker.def")
+
+    if (CMAKE_BUILD_TYPE MATCHES "Debug")
+        list(APPEND SEAT_CRAFT_APP_PICKER_COMPILE_DEFINITIONS -DDEBUG)
     endif ()
 endif()
 
@@ -93,7 +97,11 @@ foreach(source_file IN LISTS APP_PICKER_FILES)
     source_group("Source\\${group_path}" FILES "${source_file}")
 endforeach()
 
+set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0 -g")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0 -g")
+
 add_library(${PROJECT_NAME} SHARED ${SEAT_CRAFT_COMMON_PUBLIC_HEADERS} ${APP_PICKER_PUBLIC_HEADERS} ${APP_PICKER_FILES})
+target_compile_definitions(${PROJECT_NAME} PRIVATE ${SEAT_CRAFT_APP_PICKER_COMPILE_DEFINITIONS})
 target_include_directories(${PROJECT_NAME} PUBLIC ${SEAT_CRAFT_ROOT_INCLUDE_DIR})
 target_include_directories(${PROJECT_NAME} PRIVATE ${THIRD_PARTY_ROOT_DIR}/tgfx/include)
 target_include_directories(${PROJECT_NAME} PRIVATE .)

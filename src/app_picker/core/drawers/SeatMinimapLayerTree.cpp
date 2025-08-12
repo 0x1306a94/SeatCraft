@@ -182,7 +182,7 @@ void SeatMinimapLayerTree::onDraw(tgfx::Canvas *canvas, const kk::SeatCraftCoreA
     auto surface = canvas->getSurface();
     auto width = surface->width();
     auto transX = static_cast<float>(width) - _contaierSize.width;
-    auto matrix = tgfx::Matrix::MakeTrans(transX, 0);
+    auto matrix = tgfx::Matrix::MakeTrans(transX, 6);
     _root->setMatrix(matrix);
 
     _displayList->render(surface, false);
