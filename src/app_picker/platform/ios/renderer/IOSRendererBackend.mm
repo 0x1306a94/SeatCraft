@@ -26,7 +26,7 @@ IOSRendererBackend::~IOSRendererBackend() {
 
 std::shared_ptr<tgfx::Window> IOSRendererBackend::getWindow() {
     if (_window == nullptr) {
-        _window = tgfx::EAGLWindow::MakeFrom(eagLayer);
+        _window = tgfx::EAGLWindow::MakeFrom(_eagLayer);
     }
     return _window;
 }

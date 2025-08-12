@@ -162,15 +162,18 @@
 			inputFileListPaths = (
 			);
 			inputPaths = (
+				$SRCROOT/../gen_xcode/Products/$CONFIGURATION/SeatCraftAppPicker.framework,
 			);
 			name = "Copy framework";
 			outputFileListPaths = (
 			);
 			outputPaths = (
+				$CONFIGURATION_BUILD_DIR/SeatCraftAppPicker.framework,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "# Type a script or drag a script file from your workspace to insert its path.\ncp -rf $SRCROOT/../gen_xcode/Products/$CONFIGURATION/SeatCraftAppPicker.framework $CONFIGURATION_BUILD_DIR\n";
+			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
 
