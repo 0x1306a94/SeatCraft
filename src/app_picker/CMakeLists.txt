@@ -54,11 +54,7 @@ elseif(ANDROID)
     )
     list(APPEND APP_PICKER_FILES ${APP_PICKER_PLATFORM_IOS_FILES})
 
-    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--gc-sections -Wl,--version-script=${SEAT_CRAFT_ROOT_DIR}/android/SeatCraftAppPicker.def")
-
-    if (CMAKE_BUILD_TYPE MATCHES "Debug")
-        list(APPEND SEAT_CRAFT_APP_PICKER_COMPILE_DEFINITIONS -DDEBUG)
-    endif ()
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-z,max-page-size=16384 -Wl,--gc-sections -Wl,--version-script=${SEAT_CRAFT_ROOT_DIR}/android/SeatCraftAppPicker.def")
 endif()
 
 foreach(source_file IN LISTS APP_PICKER_FILES)

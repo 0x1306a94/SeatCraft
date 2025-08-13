@@ -34,15 +34,25 @@ class SeatCraftPickerView : TextureView, TextureView.SurfaceTextureListener {
         super.onAttachedToWindow()
         if (surfaceTexture != null) {
             // Surface 已经准备好了，手动调用
-            onSurfaceTextureAvailable(surfaceTexture!!, width, height)
+            if (navtiveInitialized()) {
+                nativeUpdateSize()
+                startIfAnimatorNeeded()
+            } else {
+                onSurfaceTextureAvailable(surfaceTexture!!, width, height)
+            }
         } else {
             surfaceTextureListener = this
         }
     }
 
-    public fun setAreaMapSvgData(data: ByteArray) {
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
+        animator?.pause()
+    }
+
+    fun setAreaMapSvgData(data: ByteArray?) {
         areaMapSvgData = data;
-        if (nativePtr == 0L) {
+        if (!navtiveInitialized()) {
             return
         }
         nativeSetAreaMapSvgData(data);
@@ -77,17 +87,24 @@ class SeatCraftPickerView : TextureView, TextureView.SurfaceTextureListener {
     }
 
     override fun onSurfaceTextureSizeChanged(p0: SurfaceTexture, p1: Int, p2: Int) {
-        if (nativePtr == 0L) {
+        if (!navtiveInitialized()) {
             return
         }
         nativeUpdateSize()
     }
 
     override fun onSurfaceTextureDestroyed(p0: SurfaceTexture): Boolean {
+        animator?.pause()
+        animator = null
+        release()
         return true
     }
 
     override fun onSurfaceTextureUpdated(p0: SurfaceTexture) {
+    }
+
+    private fun navtiveInitialized(): Boolean {
+        return nativePtr != 0L
     }
 
     private fun release() {
@@ -95,14 +112,14 @@ class SeatCraftPickerView : TextureView, TextureView.SurfaceTextureListener {
             surface!!.release()
             surface = null
         }
-        if (nativePtr == 0L) {
+        if (!navtiveInitialized()) {
             return
         }
         nativeRelease()
     }
 
     private fun draw(force: Boolean) {
-        if (nativePtr == 0L) {
+        if (!navtiveInitialized()) {
             return
         }
         nativeDraw(force);
