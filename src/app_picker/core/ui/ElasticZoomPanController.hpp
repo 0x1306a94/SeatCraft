@@ -15,22 +15,9 @@
 #include <tgfx/core/Rect.h>
 #include <tgfx/core/Size.h>
 
-namespace kk::ui {
+#include "core/EdgeInsets.h"
 
-// 模拟 UIEdgeInsets
-struct EdgeInsets {
-    float top;
-    float left;
-    float bottom;
-    float right;
-    EdgeInsets()
-        : EdgeInsets(0.0f, 0.0f, 0.0f, 0.0f) {}
-    EdgeInsets(float top, float left, float bottom, float right)
-        : top(top)
-        , left(left)
-        , bottom(bottom)
-        , right(right) {}
-};
+namespace kk::ui {
 
 class ElasticZoomPanController {
   public:
@@ -172,7 +159,7 @@ class ElasticZoomPanController {
     tgfx::Size _bounds{0.0f, 0.0f};
     tgfx::Size _contentSize{0.0f, 0.0f};
     tgfx::Point _contentOffset{0.0f, 0.0f};
-    EdgeInsets _contentInset{0.0f, 0.0f, 0.0f, 0.0f};
+    kk::EdgeInsets _contentInset{0.0f, 0.0f, 0.0f, 0.0f};
 };
 
 }  // namespace kk::ui

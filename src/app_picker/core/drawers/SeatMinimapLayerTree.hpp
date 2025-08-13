@@ -16,30 +16,30 @@
 
 namespace tgfx {
 class Layer;
+class ShapeLayer;
 class DisplayList;
 };  // namespace tgfx
 
 namespace kk::drawers {
-class SeatMinimapContainerLayer;
-class SeatMinimapLineBoxLayer;
 class SeatMinimapLayerTree : public kk::drawers::Drawer {
   public:
     explicit SeatMinimapLayerTree();
 
-    virtual ~SeatMinimapLayerTree();
+    ~SeatMinimapLayerTree() override;
     bool hasContentChanged() const;
-    virtual void prepare(tgfx::Canvas *canvas, const kk::SeatCraftCoreApp *app, bool force) override;
+    void prepare(tgfx::Canvas *canvas, const kk::SeatCraftCoreApp *app, bool force) override;
 
   protected:
     void updateLineBox(const kk::SeatCraftCoreApp *app);
-    bool updateContaierSize(const kk::SeatCraftCoreApp *app);
-    virtual std::shared_ptr<SeatMinimapContainerLayer> buildLayerTree(const kk::SeatCraftCoreApp *app);
-    virtual void onDraw(tgfx::Canvas *canvas, const kk::SeatCraftCoreApp *app) override;
+    bool updateContainerSize(const kk::SeatCraftCoreApp *app);
+    virtual std::shared_ptr<tgfx::ShapeLayer> buildLayerTree(const kk::SeatCraftCoreApp *app);
+    void onDraw(tgfx::Canvas *canvas, const kk::SeatCraftCoreApp *app) override;
 
   private:
-    tgfx::Size _contaierSize{};
-    std::shared_ptr<SeatMinimapContainerLayer> _root{nullptr};
-    std::shared_ptr<SeatMinimapLineBoxLayer> _lineBox{nullptr};
+    tgfx::Size _viewSize{};
+    tgfx::Size _containerSize{};
+    std::shared_ptr<tgfx::ShapeLayer> _root{nullptr};
+    std::shared_ptr<tgfx::ShapeLayer> _lineBox{nullptr};
     std::unique_ptr<tgfx::DisplayList> _displayList{nullptr};
 };
 

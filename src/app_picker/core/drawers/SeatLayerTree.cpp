@@ -40,7 +40,7 @@ SeatLayerTree::SeatLayerTree()
     , _root(nullptr)
     , _seatLayer(nullptr)
     , _displayList(std::make_unique<tgfx::DisplayList>()) {
-}
+};
 
 SeatLayerTree::~SeatLayerTree() {
     tgfx::PrintLog("SeatLayerTree::~SeatLayerTree");
