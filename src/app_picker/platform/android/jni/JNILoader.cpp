@@ -33,6 +33,29 @@ JNIEXPORT void JNICALL Java_com_seatcraft_picker_SeatCraftPickerView_nativeUpdat
     handler->updateSize();
 }
 
+JNIEXPORT void JNICALL Java_com_seatcraft_picker_SeatCraftPickerView_nativeUpdatePan(JNIEnv *env, jobject thiz, jfloat x, jfloat y) {
+    UNUSED_PARAM(env);
+    UNUSED_PARAM(thiz);
+    auto handler = GetSeatCraftPickerView(env, thiz);
+    if (handler == nullptr) {
+        return;
+    }
+
+    handler->handlePan(tgfx::Point{x, y});
+    handler->updateZoomPanControllerState();
+}
+
+JNIEXPORT void JNICALL Java_com_seatcraft_picker_SeatCraftPickerView_nativeUpdatePinch(JNIEnv *env, jobject thiz, jfloat scale, jfloat cx, jfloat cy) {
+    UNUSED_PARAM(env);
+    UNUSED_PARAM(thiz);
+    auto handler = GetSeatCraftPickerView(env, thiz);
+    if (handler == nullptr) {
+        return;
+    }
+    handler->handlePinch(scale, tgfx::Point{cx, cy});
+    handler->updateZoomPanControllerState();
+}
+
 JNIEXPORT void JNICALL Java_com_seatcraft_picker_SeatCraftPickerView_nativeRelease(JNIEnv *env, jobject thiz) {
     UNUSED_PARAM(env);
     UNUSED_PARAM(thiz);

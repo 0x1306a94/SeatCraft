@@ -13,9 +13,7 @@
 
 namespace kk::ui {
 SeatCraftPickerView::SeatCraftPickerView(std::shared_ptr<kk::SeatCraftCoreApp> app, std::shared_ptr<kk::renderer::SeatCraftCoreRenderer> renderer)
-    : _app(std::move(app))
-    , _renderer(std::move(renderer))
-    , _zoomPanController(std::make_shared<kk::ui::ElasticZoomPanController>()) {
+    : _app(std::move(app)), _renderer(std::move(renderer)), _zoomPanController(std::make_shared<kk::ui::ElasticZoomPanController>()) {
     tgfx::PrintLog("SeatCraftPickerView::SeatCraftPickerView()");
 }
 
@@ -47,6 +45,14 @@ void SeatCraftPickerView::updateAreaSvgData(std::unique_ptr<tgfx::Stream> data) 
     }
     _svgScale = scale;
     updateContentSize();
+}
+
+void SeatCraftPickerView::handlePan(const tgfx::Point &delta) {
+    _zoomPanController->handlePan(delta);
+}
+
+void SeatCraftPickerView::handlePinch(float scale, const tgfx::Point &center) {
+    _zoomPanController->handlePinch(scale, center);
 }
 
 void SeatCraftPickerView::updateContentSize() {
