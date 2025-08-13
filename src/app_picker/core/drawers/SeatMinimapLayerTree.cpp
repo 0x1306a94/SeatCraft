@@ -9,22 +9,27 @@
 
 #include "core/EdgeInsets.h"
 #include "core/SeatCraftCoreApp.hpp"
+#include "core/svg/ConvertSVGLayer.hpp"
 
 #include <SeatCraft/common/common_macro.h>
 
 #include <tgfx/core/Canvas.h>
 #include <tgfx/layers/DisplayList.h>
+#include <tgfx/layers/ImageLayer.h>
 #include <tgfx/layers/ShapeLayer.h>
 #include <tgfx/layers/SolidColor.h>
 #include <tgfx/platform/Print.h>
+#include <tgfx/svg/SVGDOM.h>
 
 namespace kk::drawers {
 
 SeatMinimapLayerTree::SeatMinimapLayerTree()
     : kk::drawers::Drawer("SeatMinimapLayerTree")
+    , _inset(kk::EdgeInsets{20.f, 20.f, 20.f, 20.f})
     , _root(nullptr)
     , _lineBox(nullptr)
-    , _displayList(std::make_unique<tgfx::DisplayList>()) {
+    , _displayList(std::make_unique<tgfx::DisplayList>())
+    , _areaCacheImage(nullptr) {
 }
 
 SeatMinimapLayerTree::~SeatMinimapLayerTree() {
@@ -49,6 +54,15 @@ void SeatMinimapLayerTree::prepare(tgfx::Canvas *canvas, const kk::SeatCraftCore
     }
 
     if (rebuild) {
+        prebuildAreaImage(canvas, app);
+    }
+
+    if (rebuild) {
+        if (_areaLayer) {
+            _areaLayer->removeFromParent();
+            _areaLayer = nullptr;
+        }
+
         if (_lineBox) {
             _lineBox->removeFromParent();
             _lineBox = nullptr;
@@ -74,12 +88,10 @@ void SeatMinimapLayerTree::updateLineBox(const kk::SeatCraftCoreApp *app) {
         return;
     }
 
-    kk::EdgeInsets inset{20.f, 20.f, 20.f, 20.f};
-
     // 计算考虑 inset 后的 minimapSize
     tgfx::Size minimapSize{
-        _containerSize.width - inset.left - inset.right,
-        _containerSize.height - inset.top - inset.bottom,
+        _containerSize.width - _inset.left - _inset.right,
+        _containerSize.height - _inset.top - _inset.bottom,
     };
 
     auto zoomScale = app->zoomScale();
@@ -88,23 +100,23 @@ void SeatMinimapLayerTree::updateLineBox(const kk::SeatCraftCoreApp *app) {
     float rectWidth = viewSize.width / contentSize.width / zoomScale * minimapSize.width;
     float rectHeight = viewSize.height / contentSize.height / zoomScale * minimapSize.height;
 
-    // 计算指示框在 minimap 中的位置（考虑 inset）
-    float rectX = -contentOffset.x / contentSize.width / zoomScale * minimapSize.width + inset.left;
-    float rectY = -contentOffset.y / contentSize.height / zoomScale * minimapSize.height + inset.top;
+    // 计算指示框在 minimap 中的位置（考虑 _inset）
+    float rectX = -contentOffset.x / contentSize.width / zoomScale * minimapSize.width + _inset.left;
+    float rectY = -contentOffset.y / contentSize.height / zoomScale * minimapSize.height + _inset.top;
 
     // 边界处理
     if (rectWidth > minimapSize.width) {
         rectWidth = minimapSize.width;
-        rectX = inset.left;
+        rectX = _inset.left;
     } else {
-        rectX = std::max(inset.left, std::min(rectX, minimapSize.width - rectWidth + inset.left));
+        rectX = std::max(_inset.left, std::min(rectX, minimapSize.width - rectWidth + _inset.left));
     }
 
     if (rectHeight > minimapSize.height) {
         rectHeight = minimapSize.height;
-        rectY = inset.top;
+        rectY = _inset.top;
     } else {
-        rectY = std::max(inset.top, std::min(rectY, minimapSize.height - rectHeight + inset.top));
+        rectY = std::max(_inset.top, std::min(rectY, minimapSize.height - rectHeight + _inset.top));
     }
 
     auto mapRect = tgfx::Rect::MakeXYWH(rectX, rectY, rectWidth, rectHeight);
@@ -130,6 +142,35 @@ bool SeatMinimapLayerTree::updateContainerSize(const kk::SeatCraftCoreApp *app) 
     return true;
 }
 
+bool SeatMinimapLayerTree::prebuildAreaImage(tgfx::Canvas *canvas, const kk::SeatCraftCoreApp *app) {
+    auto areaSvgDom = app->getSvgDom();
+    if (areaSvgDom == nullptr) {
+        _areaCacheImage = nullptr;
+        return false;
+    }
+
+    auto areaDomSize = areaSvgDom->getContainerSize();
+    auto areaLayer = kk::svg::convertSVGDomToLayer(areaSvgDom);
+    if (areaLayer == nullptr) {
+        _areaCacheImage = nullptr;
+        return false;
+    }
+
+    auto surfaceWidth = static_cast<int>(std::ceil(_containerSize.width));
+    auto surfaceHeight = static_cast<int>(std::ceil(_containerSize.height));
+    auto context = canvas->getSurface()->getContext();
+    auto surface = tgfx::Surface::Make(context, surfaceWidth, surfaceHeight, tgfx::ColorType::RGBA_8888);
+    auto scaleX = static_cast<float>(surfaceWidth) / areaDomSize.width;
+    auto scaleY = static_cast<float>(surfaceHeight) / areaDomSize.height;
+    auto fitScale = std::min(scaleX, scaleY);
+    areaLayer->setMatrix(tgfx::Matrix::MakeScale(fitScale));
+    tgfx::DisplayList displayList{};
+    displayList.root()->addChild(areaLayer);
+    displayList.render(surface.get(), true);
+    _areaCacheImage = surface->makeImageSnapshot();
+    return true;
+}
+
 std::shared_ptr<tgfx::ShapeLayer> SeatMinimapLayerTree::buildLayerTree(const kk::SeatCraftCoreApp *app) {
 
     UNUSED_PARAM(app);
@@ -139,6 +180,22 @@ std::shared_ptr<tgfx::ShapeLayer> SeatMinimapLayerTree::buildLayerTree(const kk:
     root->setPath(rectPath);
     root->setFillStyle(tgfx::SolidColor::Make(tgfx::Color{0.0f, 0.0f, 0.0f, 0.6f}));
 
+    if (_areaCacheImage) {
+        _areaLayer = tgfx::ImageLayer::Make();
+        _areaLayer->setImage(_areaCacheImage);
+
+        tgfx::Size minimapSize{
+            _containerSize.width - _inset.left - _inset.right,
+            _containerSize.height - _inset.top - _inset.bottom,
+        };
+        const float scaleX = minimapSize.width / static_cast<float>(_areaCacheImage->width());
+        const float scaleY = minimapSize.height / static_cast<float>(_areaCacheImage->height());
+        const float fitScale = std::min(scaleX, scaleY);
+        auto matrix = tgfx::Matrix::MakeTrans(_inset.left, _inset.top);
+        matrix.postScale(fitScale, fitScale);
+        _areaLayer->setMatrix(matrix);
+    }
+
     _lineBox = tgfx::ShapeLayer::Make();
 
     _lineBox->setStrokeAlign(tgfx::StrokeAlign::Inside);
@@ -146,6 +203,7 @@ std::shared_ptr<tgfx::ShapeLayer> SeatMinimapLayerTree::buildLayerTree(const kk:
     _lineBox->setLineWidth(6);
 
     updateLineBox(app);
+    root->addChild(_areaLayer);
     root->addChild(_lineBox);
     return root;
 }

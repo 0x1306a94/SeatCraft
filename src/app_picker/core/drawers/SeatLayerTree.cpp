@@ -54,7 +54,7 @@ bool SeatLayerTree::hasContentChanged() const {
 }
 
 void SeatLayerTree::prepare(tgfx::Canvas *canvas, const kk::SeatCraftCoreApp *app, bool force) {
-    prebuildSeatStatusBitmap(canvas, app);
+    prebuildSeatStatusImage(canvas, app);
 
     if (updateContentSize(app) && _root != nullptr) {
         if (_seatLayer) {
@@ -94,7 +94,7 @@ bool SeatLayerTree::updateContentSize(const kk::SeatCraftCoreApp *app) {
     return true;
 }
 
-bool SeatLayerTree::prebuildSeatStatusBitmap(tgfx::Canvas *canvas, const kk::SeatCraftCoreApp *app) {
+bool SeatLayerTree::prebuildSeatStatusImage(tgfx::Canvas *canvas, const kk::SeatCraftCoreApp *app) {
     if (!_seatStatusImageMap.empty()) {
         return false;
     }
