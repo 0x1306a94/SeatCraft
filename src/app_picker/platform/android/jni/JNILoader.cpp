@@ -1,4 +1,5 @@
 
+#include <android/asset_manager_jni.h>
 #include <jni.h>
 
 #include <tgfx/core/Data.h>
@@ -7,6 +8,7 @@
 
 #include <SeatCraft/common/common_macro.h>
 
+#include "AndroidFileReader.h"
 #include "core/SeatCraftCoreApp.hpp"
 #include "core/renderer/SeatCraftCoreRenderer.hpp"
 #include "platform/android/renderer/AndroidRendererBackend.h"
@@ -79,11 +81,16 @@ JNIEXPORT void JNICALL Java_com_seatcraft_picker_SeatCraftPickerView_nativeDraw(
     handler->draw(force);
 }
 
-JNIEXPORT jlong JNICALL Java_com_seatcraft_picker_SeatCraftPickerView_nativeSetupFromSurface(JNIEnv *env, jobject thiz, jobject surface, jfloat density) {
+JNIEXPORT jlong JNICALL Java_com_seatcraft_picker_SeatCraftPickerView_nativeSetupFromSurface(JNIEnv *env, jobject thiz, jobject assetManager, jobject surface, jfloat density) {
     UNUSED_PARAM(env);
     UNUSED_PARAM(thiz);
     UNUSED_PARAM(surface);
     UNUSED_PARAM(density);
+
+    auto assetMgr = AAssetManager_fromJava(env, assetManager);
+    if (assetMgr == nullptr) {
+        return 0L;
+    }
 
     auto nativeWindow = ANativeWindow_fromSurface(env, surface);
     if (nativeWindow == nullptr) {
@@ -97,6 +104,13 @@ JNIEXPORT jlong JNICALL Java_com_seatcraft_picker_SeatCraftPickerView_nativeSetu
     };
     tgfx::Size contentSize{};
     auto app = std::make_shared<kk::SeatCraftCoreApp>(bounds, contentSize, density);
+    app->setFileReader(std::make_shared<kk::AndroidFileReader>(assetMgr));
+
+    kk::SeatStatusSVGPathMap pathMap{
+        {1, "asset://icon_chooseSeat_canSelected.svg"},
+    };
+    app->updateSeatStatusSVGPathMap(pathMap);
+
     auto backend = std::make_unique<kk::renderer::AndroidRendererBackend>(nativeWindow, density);
     auto renderer = std::make_shared<kk::renderer::SeatCraftCoreRenderer>(app, std::move(backend));
     auto handler = new kk::ui::SeatCraftPickerView(app, renderer);

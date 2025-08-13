@@ -7,15 +7,18 @@
 
 #include "SeatLayerTree.hpp"
 
-#include "../SeatCraftCoreApp.hpp"
-#include "../svg/ConvertSVGLayer.hpp"
-#include "../svg/SVGLoader.hpp"
+#include "core/FileReader.h"
+#include "core/SeatCraftCoreApp.hpp"
+#include "core/svg/ConvertSVGLayer.hpp"
+#include "core/svg/SVGLoader.hpp"
 
 #include <SeatCraft/common/common_macro.h>
 
 #include <tgfx/core/Canvas.h>
+#include <tgfx/core/Data.h>
 #include <tgfx/core/Path.h>
 #include <tgfx/core/Rect.h>
+#include <tgfx/core/Stream.h>
 #include <tgfx/layers/DisplayList.h>
 #include <tgfx/layers/ImageLayer.h>
 #include <tgfx/layers/ShapeLayer.h>
@@ -96,6 +99,12 @@ bool SeatLayerTree::prebuildSeatStatusBitmap(tgfx::Canvas *canvas, const kk::Sea
         return false;
     }
 
+    auto fileReader = app->getFileReader();
+
+    if (fileReader == nullptr) {
+        return false;
+    }
+
     const auto &seatStatusSvgMap = app->getSeatStatusSvgMap();
     if (seatStatusSvgMap.empty()) {
         return false;
@@ -119,7 +128,15 @@ bool SeatLayerTree::prebuildSeatStatusBitmap(tgfx::Canvas *canvas, const kk::Sea
     std::unordered_map<kk::SeatStatusKey, tgfx::Rect> rectsMap{};
     auto startX = static_cast<float>(itemSpacing), startY = static_cast<float>(lineSpacing);
     for (const auto &[key, value] : seatStatusSvgMap) {
-        auto seatSvgDom = kk::svg::loadSvgDom(value);
+        auto data = fileReader->readData(value);
+        if (data == nullptr) {
+            continue;
+        }
+        auto stream = tgfx::Stream::MakeFromData(data);
+        if (stream == nullptr) {
+            continue;
+        }
+        auto seatSvgDom = kk::svg::loadSvgDom(stream.get());
         if (seatSvgDom == nullptr) {
             continue;
         }
@@ -233,14 +250,17 @@ std::shared_ptr<tgfx::Layer> SeatLayerTree::buildLayerTree(tgfx::Canvas *canvas,
 
         auto bitmap = iter->second;
         auto bitmapWidth = bitmap->width();
-        auto bitmapHeight = bitmap->height();
 
         auto seatDomSize = tgfx::Size::Make(32, 32);
-        float seatStartX = areaDomSize.width * 0.1;
-        float seatStartY = areaDomSize.height * 0.1;
+        float seatStartX = areaDomSize.width * 0.1f;
+        float seatStartY = areaDomSize.height * 0.1f;
         float lineSpacing = 10.0f;
         float itemSpacing = 10.0f;
-        int rows = 300, columns = 300;
+#if ANDROID
+        int rows = 10, columns = 10;
+#else
+        int rows = 100, columns = 100;
+#endif
 
         auto scale = seatDomSize.width / static_cast<float>(bitmapWidth);
 
@@ -248,8 +268,8 @@ std::shared_ptr<tgfx::Layer> SeatLayerTree::buildLayerTree(tgfx::Canvas *canvas,
 
         for (int row = 0; row < rows; row++) {
             for (int col = 0; col < columns; col++) {
-                float itemX = seatStartX + col * lineSpacing + col * seatDomSize.width;
-                float itemY = seatStartY + row * itemSpacing + row * seatDomSize.height;
+                float itemX = seatStartX + static_cast<float>(col) * lineSpacing + static_cast<float>(col) * seatDomSize.width;
+                float itemY = seatStartY + static_cast<float>(row) * itemSpacing + static_cast<float>(row) * seatDomSize.height;
 
                 auto matrix = tgfx::Matrix::MakeScale(scale);
                 matrix.postTranslate(itemX, itemY);

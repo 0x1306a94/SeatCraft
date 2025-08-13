@@ -1,6 +1,7 @@
 package com.seatcraft.picker
 
 import android.content.Context
+import android.content.res.AssetManager
 import android.util.AttributeSet
 import android.view.GestureDetector
 import android.view.MotionEvent
@@ -45,6 +46,7 @@ class SeatCraftPickerView : SurfaceView, SurfaceHolder.Callback, Choreographer.F
             object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
                 override fun onScaleBegin(detector: ScaleGestureDetector): Boolean {
                     isScaling = true
+                    notifyNativeDraw(true)
                     startDrawing()
                     return true
                 }
@@ -55,6 +57,7 @@ class SeatCraftPickerView : SurfaceView, SurfaceHolder.Callback, Choreographer.F
 
                 override fun onScale(detector: ScaleGestureDetector): Boolean {
                     nativeUpdatePinch(detector.scaleFactor, detector.focusX, detector.focusY)
+                    notifyNativeDraw(true)
                     return true
                 }
             }
@@ -71,6 +74,7 @@ class SeatCraftPickerView : SurfaceView, SurfaceHolder.Callback, Choreographer.F
                 ): Boolean {
                     if (!isScaling) {
                         nativeUpdatePan(-distanceX, -distanceY)
+                        notifyNativeDraw(true)
                         startDrawing()
                     }
                     return true
@@ -103,7 +107,7 @@ class SeatCraftPickerView : SurfaceView, SurfaceHolder.Callback, Choreographer.F
         release()
         val metrics = resources.displayMetrics
         surface = holder.surface
-        nativePtr = nativeSetupFromSurface(surface!!, metrics.density)
+        nativePtr = nativeSetupFromSurface(context.assets, surface!!, metrics.density)
         nativeUpdateSize()
         nativeSetAreaMapSvgData(areaMapSvgData)
         startDrawing()
@@ -151,15 +155,19 @@ class SeatCraftPickerView : SurfaceView, SurfaceHolder.Callback, Choreographer.F
 
     /** 每帧回调 */
     override fun doFrame(frameTimeNanos: Long) {
-        if (nativeInitialized()) {
-            nativeDraw(false) // 这里可以传 false，表示普通刷新
-        }
+        notifyNativeDraw(false);
         if (isDrawing) {
             Choreographer.getInstance().postFrameCallback(this)
         }
     }
 
-    private external fun nativeSetupFromSurface(surface: Surface, density: Float): Long
+    private fun notifyNativeDraw(force: Boolean) {
+        if (nativeInitialized()) {
+            nativeDraw(force)
+        }
+    }
+
+    private external fun nativeSetupFromSurface(assetManager: AssetManager, surface: Surface, density: Float): Long
     private external fun nativeSetAreaMapSvgData(data: ByteArray?)
     private external fun nativeUpdateSize()
     private external fun nativeUpdatePan(x: Float, y: Float)

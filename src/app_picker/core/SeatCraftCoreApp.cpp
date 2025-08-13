@@ -7,6 +7,7 @@
 
 #include "SeatCraftCoreApp.hpp"
 
+#include "FileReader.h"
 #include "svg/SVGLoader.hpp"
 
 #include <tgfx/core/Stream.h>
@@ -19,12 +20,21 @@ namespace kk {
 SeatCraftCoreApp::SeatCraftCoreApp(const tgfx::Size &boundSize, const tgfx::Size &contentSize, float density)
     : _boundSize(boundSize)
     , _contentSize(contentSize)
-    , _density(density) {
+    , _density(density)
+    , _fileReader(std::make_shared<kk::FileReader>()) {
     tgfx::PrintLog("SeatCraftCoreApp::SeatCraftCoreApp()");
 }
 
 SeatCraftCoreApp::~SeatCraftCoreApp() {
     tgfx::PrintLog("SeatCraftCoreApp::~SeatCraftCoreApp()");
+}
+
+void SeatCraftCoreApp::setFileReader(std::shared_ptr<FileReader> fileReader) {
+    _fileReader = fileReader;
+}
+
+std::shared_ptr<FileReader> SeatCraftCoreApp::getFileReader() const {
+    return _fileReader;
 }
 
 tgfx::Size SeatCraftCoreApp::getBoundsSize() const {

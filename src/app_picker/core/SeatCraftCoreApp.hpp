@@ -23,12 +23,16 @@ class Stream;
 };  // namespace tgfx
 
 namespace kk {
+class FileReader;
 class SeatCraftCoreApp {
   public:
     explicit SeatCraftCoreApp(const tgfx::Size &boundSize = tgfx::Size{1280, 720}, const tgfx::Size &contentSize = tgfx::Size{0, 0}, float density = 1.0f);
 
     ~SeatCraftCoreApp();
 
+    void setFileReader(std::shared_ptr<FileReader> fileReader);
+
+    std::shared_ptr<FileReader> getFileReader() const;
     /// canvas 尺寸
     tgfx::Size getBoundsSize() const;
     /// 内容尺寸
@@ -77,6 +81,7 @@ class SeatCraftCoreApp {
     std::string _areaSvgPath{};
     std::shared_ptr<tgfx::SVGDOM> _svgDom{nullptr};
     kk::SeatStatusSVGPathMap _seatStatusSvgMap{};
+    std::shared_ptr<FileReader> _fileReader{nullptr};
 };
 
 };  // namespace kk
