@@ -46,8 +46,8 @@ class SeatCraftPickerView : SurfaceView, SurfaceHolder.Callback, Choreographer.F
             object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
                 override fun onScaleBegin(detector: ScaleGestureDetector): Boolean {
                     isScaling = true
+                    stopDrawing()
                     notifyNativeDraw(true)
-                    startDrawing()
                     return true
                 }
 
@@ -58,6 +58,7 @@ class SeatCraftPickerView : SurfaceView, SurfaceHolder.Callback, Choreographer.F
                 override fun onScale(detector: ScaleGestureDetector): Boolean {
                     nativeUpdatePinch(detector.scaleFactor, detector.focusX, detector.focusY)
                     notifyNativeDraw(true)
+                    startDrawing()
                     return true
                 }
             }
@@ -73,10 +74,15 @@ class SeatCraftPickerView : SurfaceView, SurfaceHolder.Callback, Choreographer.F
                     distanceY: Float
                 ): Boolean {
                     if (!isScaling) {
+                        stopDrawing()
                         nativeUpdatePan(-distanceX, -distanceY)
                         notifyNativeDraw(true)
-                        startDrawing()
                     }
+                    return true
+                }
+
+                override fun onFling(e1: MotionEvent?, e2: MotionEvent, velocityX: Float, velocityY: Float): Boolean {
+                    startDrawing()
                     return true
                 }
 
