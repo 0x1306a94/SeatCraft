@@ -76,7 +76,7 @@ void ElasticZoomPanController::setContentOffset(const tgfx::Point &contentOffset
     revalidateContentOffset();
 }
 
-tgfx::Point ElasticZoomPanController::getContentOffset() const {
+const tgfx::Point &ElasticZoomPanController::getContentOffset() const {
     return _contentOffset;
 }
 

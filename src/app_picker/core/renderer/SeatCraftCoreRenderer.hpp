@@ -39,9 +39,9 @@ class SeatCraftCoreRenderer {
     void draw(bool force = false);
 
   private:
-    std::shared_ptr<kk::SeatCraftCoreApp> app;
-    std::unique_ptr<RendererBackend> backend;
-    bool invalidate;
+    std::shared_ptr<kk::SeatCraftCoreApp> _app;
+    std::unique_ptr<RendererBackend> _backend;
+    bool _invalidate;
     std::unique_ptr<kk::drawers::GridBackgroundLayerTree> _gridLayer;
     std::unique_ptr<kk::drawers::SeatLayerTree> _seatLayer;
     std::unique_ptr<kk::drawers::SeatMinimapLayerTree> _minimapLayer;

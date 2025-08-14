@@ -304,27 +304,13 @@ void SeatLayerTree::updateRootMatrix(tgfx::Canvas *canvas, const kk::SeatCraftCo
         return;
     }
 
-    //    auto bounds = _root->getBounds();  // 原始SVG的边界
-
-    //    auto surface = canvas->getSurface();
-    //    auto surfaceWidth = surface->width();
-    //    auto surfaceHeight = surface->height();
-
     // 计算缩放比例（等比例缩放，保证完整显示）
     const float scaleX = limitSize.width / _areaDomSize.width;
     const float scaleY = limitSize.height / _areaDomSize.height;
     const float fitScale = std::min(scaleX, scaleY);
 
-    //    // 原始SVG中心点
-    //    const tgfx::Point svgCenter(bounds.centerX(), bounds.centerY());
-    //    // Canvas中心点
-    //    const tgfx::Point canvasCenter(surfaceWidth * 0.5f, surfaceHeight * 0.5f);
-
-    // 构建矩阵：先移到原点 → 缩放 → 移到Canvas中心
     tgfx::Matrix finalMatrix = tgfx::Matrix::I();
-    //    finalMatrix.postTranslate(-svgCenter.x, -svgCenter.y);
     finalMatrix.postScale(fitScale, fitScale);
-    //    finalMatrix.postTranslate(canvasCenter.x, canvasCenter.y);
 
     _root->setMatrix(finalMatrix);
 }

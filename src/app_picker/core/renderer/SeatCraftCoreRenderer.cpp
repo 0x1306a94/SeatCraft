@@ -23,9 +23,9 @@
 
 namespace kk::renderer {
 SeatCraftCoreRenderer::SeatCraftCoreRenderer(std::shared_ptr<kk::SeatCraftCoreApp> app, std::unique_ptr<RendererBackend> backend)
-    : app(std::move(app))
-    , backend(std::move(backend))
-    , invalidate(true)
+    : _app(std::move(app))
+    , _backend(std::move(backend))
+    , _invalidate(true)
     , _gridLayer(std::make_unique<kk::drawers::GridBackgroundLayerTree>())
     , _seatLayer(std::make_unique<kk::drawers::SeatLayerTree>())
     , _minimapLayer(std::make_unique<kk::drawers::SeatMinimapLayerTree>()) {
@@ -39,15 +39,15 @@ SeatCraftCoreRenderer::~SeatCraftCoreRenderer() {
 }
 
 void SeatCraftCoreRenderer::updateSize() {
-    auto window = backend->getWindow();
+    auto window = _backend->getWindow();
     if (window == nullptr) {
         return;
     }
 
-    auto width = backend->getWidth();
-    auto height = backend->getHeight();
-    auto density = backend->getDensity();
-    auto sizeChanged = app->updateScreen(tgfx::Size{static_cast<float>(width), static_cast<float>(height)}, density);
+    auto width = _backend->getWidth();
+    auto height = _backend->getHeight();
+    auto density = _backend->getDensity();
+    auto sizeChanged = _app->updateScreen(tgfx::Size{static_cast<float>(width), static_cast<float>(height)}, density);
     if (sizeChanged) {
         window->invalidSize();
         invalidateContent();
@@ -55,19 +55,15 @@ void SeatCraftCoreRenderer::updateSize() {
 }
 
 void SeatCraftCoreRenderer::invalidateContent() {
-    invalidate = true;
+    _invalidate = true;
 }
 
 void SeatCraftCoreRenderer::draw(bool force) {
-    auto window = backend->getWindow();
+    auto window = _backend->getWindow();
 
     if (window == nullptr) {
         return;
     }
-
-    //    if (!invalidate && !force) {
-    //        return;
-    //    }
 
     auto device = window->getDevice();
     auto context = device->lockContext();
@@ -83,7 +79,7 @@ void SeatCraftCoreRenderer::draw(bool force) {
 
     auto canvas = surface->getCanvas();
 
-    auto appPtr = app.get();
+    auto appPtr = _app.get();
     _gridLayer->prepare(canvas, appPtr, force);
     _seatLayer->prepare(canvas, appPtr, force);
     _minimapLayer->prepare(canvas, appPtr, force);
@@ -92,7 +88,7 @@ void SeatCraftCoreRenderer::draw(bool force) {
         _seatLayer->hasContentChanged() ||
         _minimapLayer->hasContentChanged();
 
-    if (!hasContentChanged && !force) {
+    if (!hasContentChanged && !force && !_invalidate) {
         device->unlock();
         return;
     }
@@ -111,6 +107,7 @@ void SeatCraftCoreRenderer::draw(bool force) {
 
     device->unlock();
 
-    invalidate = false;
+    _invalidate = false;
 }
+
 };  // namespace kk::renderer

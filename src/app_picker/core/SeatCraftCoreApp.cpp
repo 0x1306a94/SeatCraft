@@ -53,6 +53,20 @@ tgfx::Size SeatCraftCoreApp::getOriginSize() const {
     return size;
 }
 
+float SeatCraftCoreApp::density() const {
+    return _density;
+}
+
+/// 当前缩放比例
+float SeatCraftCoreApp::zoomScale() const {
+    return _zoomScale;
+}
+
+/// 当前滑动偏移
+const tgfx::Point &SeatCraftCoreApp::contentOffset() const {
+    return _contentOffset;
+}
+
 std::shared_ptr<tgfx::SVGDOM> SeatCraftCoreApp::getSvgDom() const {
     return _svgDom;
 }

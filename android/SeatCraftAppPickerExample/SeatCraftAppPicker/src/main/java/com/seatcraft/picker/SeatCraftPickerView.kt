@@ -53,12 +53,12 @@ class SeatCraftPickerView : SurfaceView, SurfaceHolder.Callback, Choreographer.F
 
                 override fun onScaleEnd(detector: ScaleGestureDetector) {
                     isScaling = false
+                    startDrawing()
                 }
 
                 override fun onScale(detector: ScaleGestureDetector): Boolean {
                     nativeUpdatePinch(detector.scaleFactor, detector.focusX, detector.focusY)
                     notifyNativeDraw(true)
-                    startDrawing()
                     return true
                 }
             }
@@ -98,6 +98,7 @@ class SeatCraftPickerView : SurfaceView, SurfaceHolder.Callback, Choreographer.F
         areaMapSvgData = data
         if (nativeInitialized()) {
             nativeSetAreaMapSvgData(data)
+            nativeDraw(true)
         }
     }
 
@@ -116,6 +117,7 @@ class SeatCraftPickerView : SurfaceView, SurfaceHolder.Callback, Choreographer.F
         nativePtr = nativeSetupFromSurface(context.assets, surface!!, metrics.density)
         nativeUpdateSize()
         nativeSetAreaMapSvgData(areaMapSvgData)
+        nativeDraw(true)
         startDrawing()
     }
 

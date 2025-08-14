@@ -11,16 +11,17 @@
 #include "AndroidFileReader.h"
 #include "core/SeatCraftCoreApp.hpp"
 #include "core/renderer/SeatCraftCoreRenderer.hpp"
+#include "core/ui/ElasticZoomPanController.hpp"
+#include "core/ui/SeatCraftViewCore.hpp"
 #include "platform/android/renderer/AndroidRendererBackend.h"
-#include "platform/android/ui/SeatCraftPickerView.h"
 
 static jfieldID SeatCraftPickerView_nativePtr;
-static kk::ui::SeatCraftPickerView *GetSeatCraftPickerView(JNIEnv *env, jobject thiz) {
+static kk::ui::SeatCraftViewCore *GetSeatCraftViewCore(JNIEnv *env, jobject thiz) {
     jlong ptr = env->GetLongField(thiz, SeatCraftPickerView_nativePtr);
     if (ptr == 0) {
         return nullptr;
     }
-    return reinterpret_cast<kk::ui::SeatCraftPickerView *>(ptr);
+    return reinterpret_cast<kk::ui::SeatCraftViewCore *>(ptr);
 }
 
 extern "C" {
@@ -28,7 +29,7 @@ extern "C" {
 JNIEXPORT void JNICALL Java_com_seatcraft_picker_SeatCraftPickerView_nativeUpdateSize(JNIEnv *env, jobject thiz) {
     UNUSED_PARAM(env);
     UNUSED_PARAM(thiz);
-    auto handler = GetSeatCraftPickerView(env, thiz);
+    auto handler = GetSeatCraftViewCore(env, thiz);
     if (handler == nullptr) {
         return;
     }
@@ -38,30 +39,28 @@ JNIEXPORT void JNICALL Java_com_seatcraft_picker_SeatCraftPickerView_nativeUpdat
 JNIEXPORT void JNICALL Java_com_seatcraft_picker_SeatCraftPickerView_nativeUpdatePan(JNIEnv *env, jobject thiz, jfloat x, jfloat y) {
     UNUSED_PARAM(env);
     UNUSED_PARAM(thiz);
-    auto handler = GetSeatCraftPickerView(env, thiz);
+    auto handler = GetSeatCraftViewCore(env, thiz);
     if (handler == nullptr) {
         return;
     }
 
     handler->handlePan(tgfx::Point{x, y});
-    handler->updateZoomPanControllerState();
 }
 
 JNIEXPORT void JNICALL Java_com_seatcraft_picker_SeatCraftPickerView_nativeUpdatePinch(JNIEnv *env, jobject thiz, jfloat scale, jfloat cx, jfloat cy) {
     UNUSED_PARAM(env);
     UNUSED_PARAM(thiz);
-    auto handler = GetSeatCraftPickerView(env, thiz);
+    auto handler = GetSeatCraftViewCore(env, thiz);
     if (handler == nullptr) {
         return;
     }
     handler->handlePinch(scale, tgfx::Point{cx, cy});
-    handler->updateZoomPanControllerState();
 }
 
 JNIEXPORT void JNICALL Java_com_seatcraft_picker_SeatCraftPickerView_nativeRelease(JNIEnv *env, jobject thiz) {
     UNUSED_PARAM(env);
     UNUSED_PARAM(thiz);
-    auto handler = GetSeatCraftPickerView(env, thiz);
+    auto handler = GetSeatCraftViewCore(env, thiz);
     if (handler == nullptr) {
         return;
     }
@@ -74,7 +73,7 @@ JNIEXPORT void JNICALL Java_com_seatcraft_picker_SeatCraftPickerView_nativeDraw(
     UNUSED_PARAM(thiz);
     UNUSED_PARAM(force);
 
-    auto handler = GetSeatCraftPickerView(env, thiz);
+    auto handler = GetSeatCraftViewCore(env, thiz);
     if (handler == nullptr) {
         return;
     }
@@ -112,8 +111,8 @@ JNIEXPORT jlong JNICALL Java_com_seatcraft_picker_SeatCraftPickerView_nativeSetu
     app->updateSeatStatusSVGPathMap(pathMap);
 
     auto backend = std::make_unique<kk::renderer::AndroidRendererBackend>(nativeWindow, density);
-    auto renderer = std::make_shared<kk::renderer::SeatCraftCoreRenderer>(app, std::move(backend));
-    auto handler = new kk::ui::SeatCraftPickerView(app, renderer);
+    auto zoomPanController = std::make_unique<kk::ui::ElasticZoomPanController>();
+    auto handler = new kk::ui::SeatCraftViewCore(app, std::move(backend), std::move(zoomPanController));
     auto ptr = reinterpret_cast<jlong>(handler);
     return ptr;
 }
@@ -122,7 +121,7 @@ JNIEXPORT void JNICALL Java_com_seatcraft_picker_SeatCraftPickerView_nativeSetAr
     UNUSED_PARAM(env);
     UNUSED_PARAM(thiz);
     UNUSED_PARAM(areaSvgData);
-    auto handler = GetSeatCraftPickerView(env, thiz);
+    auto handler = GetSeatCraftViewCore(env, thiz);
     if (handler == nullptr) {
         return;
     }

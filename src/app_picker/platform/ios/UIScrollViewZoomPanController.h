@@ -13,7 +13,6 @@ class UIScrollViewZoomPanController : public ElasticZoomPanController {
     UIScrollViewZoomPanController();
     virtual ~UIScrollViewZoomPanController();
     virtual void setZoomScale(float zoomScale) override;
-
     virtual void setContentOffset(const tgfx::Point &contentOffset) override;
 };
 

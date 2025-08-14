@@ -50,7 +50,7 @@ class ElasticZoomPanController {
 
     virtual void setContentOffset(const tgfx::Point &contentOffset);
 
-    tgfx::Point getContentOffset() const;
+    const tgfx::Point &getContentOffset() const;
 
     // --- Transformation Matrix ---
     tgfx::Matrix getMatrix() const;
