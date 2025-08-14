@@ -150,10 +150,10 @@ void SeatCraftViewCore::updateContentSize() {
 }
 
 void SeatCraftViewCore::updateMaxMinZoomScalesForCurrentBounds() {
-    float boundsWidth = _zoomPanController->getBounds().width;
-    float contentWidth = _zoomPanController->getContentSize().width;
+    auto boundsSize = _zoomPanController->getBounds();
+    auto contentSize = _zoomPanController->getContentSize();
 
-    if (boundsWidth <= 0.0f || contentWidth <= 0.0) {
+    if (boundsSize.isEmpty() || contentSize.isEmpty()) {
         _zoomPanController->setMinimumZoomScale(1.0f);
         _zoomPanController->setMaximumZoomScale(1.0f);
         _zoomPanController->setZoomScale(1.0f);
@@ -170,12 +170,14 @@ void SeatCraftViewCore::updateMaxMinZoomScalesForCurrentBounds() {
     float svgScale = _svgScale;
     float svgModelScale = _svgModelScale;
 
-    _zoomScale9 = boundsWidth / ((svgScale * 36.0f) / svgModelScale * 9.0f);
-    _zoomScale18 = boundsWidth / ((svgScale * 36.0f) / svgModelScale * 18.0f);
-    _zoomScale30 = boundsWidth / ((svgScale * 36.0f) / svgModelScale * 36.0f);
-    _zoomScale50 = boundsWidth / ((svgScale * 36.0f) / svgModelScale * 50.0f);
+    float minimumBounds = std::min(boundsSize.width, boundsSize.height);
 
-    float minimumZoomScale = boundsWidth / contentWidth;
+    _zoomScale9 = minimumBounds / ((svgScale * 36.0f) / svgModelScale * 9.0f);
+    _zoomScale18 = minimumBounds / ((svgScale * 36.0f) / svgModelScale * 18.0f);
+    _zoomScale30 = minimumBounds / ((svgScale * 36.0f) / svgModelScale * 30.0f);
+    _zoomScale50 = minimumBounds / ((svgScale * 36.0f) / svgModelScale * 50.0f);
+
+    float minimumZoomScale = std::min(boundsSize.width / contentSize.width, boundsSize.height / contentSize.height);
     float baseScale = 1.0f / (svgScale / svgModelScale);
     float maximumZoomScale = _zoomScale9;
     if (maximumZoomScale < baseScale) {
