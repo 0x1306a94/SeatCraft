@@ -36,6 +36,7 @@ class SeatCraftViewCore {
                                std::unique_ptr<kk::renderer::RendererBackend> backend,
                                std::unique_ptr<kk::ui::ElasticZoomPanController> zoomPanController);
     ~SeatCraftViewCore();
+    void replaceBackend(std::unique_ptr<kk::renderer::RendererBackend> backend);
 
     std::shared_ptr<kk::SeatCraftCoreApp> getApp() const;
     // 视图尺寸更新，由平台层调用

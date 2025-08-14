@@ -38,10 +38,19 @@ SeatCraftCoreRenderer::~SeatCraftCoreRenderer() {
     tgfx::PrintLog("%s", __PRETTY_FUNCTION__);
 }
 
-void SeatCraftCoreRenderer::updateSize() {
+void SeatCraftCoreRenderer::replaceBackend(std::unique_ptr<RendererBackend> backend) {
+    _backend = std::move(backend);
+    _minimapLayer->invalidateAreaCacheImage();
+}
+
+bool SeatCraftCoreRenderer::updateSize() {
+    if (_backend == nullptr) {
+        return false;
+    }
+
     auto window = _backend->getWindow();
     if (window == nullptr) {
-        return;
+        return false;
     }
 
     auto width = _backend->getWidth();
@@ -52,6 +61,7 @@ void SeatCraftCoreRenderer::updateSize() {
         window->invalidSize();
         invalidateContent();
     }
+    return sizeChanged;
 }
 
 void SeatCraftCoreRenderer::invalidateContent() {
@@ -59,6 +69,10 @@ void SeatCraftCoreRenderer::invalidateContent() {
 }
 
 void SeatCraftCoreRenderer::draw(bool force) {
+    if (_backend == nullptr) {
+        return;
+    }
+
     auto window = _backend->getWindow();
 
     if (window == nullptr) {

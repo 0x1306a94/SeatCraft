@@ -37,6 +37,10 @@ SeatMinimapLayerTree::~SeatMinimapLayerTree() {
     tgfx::PrintLog("%s", __PRETTY_FUNCTION__);
 }
 
+void SeatMinimapLayerTree::invalidateAreaCacheImage() {
+    _rebuildAreaCacheImage = true;
+}
+
 bool SeatMinimapLayerTree::hasContentChanged() const {
     if (_root == nullptr) {
         return true;
@@ -54,8 +58,12 @@ void SeatMinimapLayerTree::prepare(tgfx::Canvas *canvas, const kk::SeatCraftCore
         rebuild = true;
     }
 
-    if (rebuild) {
+    if (rebuild || _rebuildAreaCacheImage) {
         prebuildAreaImage(canvas, app);
+        _rebuildAreaCacheImage = false;
+        if (!rebuild && _areaLayer) {
+            _areaLayer->setImage(_areaCacheImage);
+        }
     }
 
     if (rebuild) {

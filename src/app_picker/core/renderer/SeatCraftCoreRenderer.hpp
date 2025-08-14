@@ -32,7 +32,9 @@ class SeatCraftCoreRenderer {
 
     ~SeatCraftCoreRenderer();
 
-    void updateSize();
+    void replaceBackend(std::unique_ptr<RendererBackend> backend);
+
+    bool updateSize();
 
     void invalidateContent();
 

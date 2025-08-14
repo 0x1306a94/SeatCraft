@@ -57,66 +57,6 @@ JNIEXPORT void JNICALL Java_com_seatcraft_picker_SeatCraftPickerView_nativeUpdat
     handler->handlePinch(scale, tgfx::Point{cx, cy});
 }
 
-JNIEXPORT void JNICALL Java_com_seatcraft_picker_SeatCraftPickerView_nativeRelease(JNIEnv *env, jobject thiz) {
-    UNUSED_PARAM(env);
-    UNUSED_PARAM(thiz);
-    auto handler = GetSeatCraftViewCore(env, thiz);
-    if (handler == nullptr) {
-        return;
-    }
-    delete handler;
-    env->SetLongField(thiz, SeatCraftPickerView_nativePtr, 0L);
-}
-
-JNIEXPORT void JNICALL Java_com_seatcraft_picker_SeatCraftPickerView_nativeDraw(JNIEnv *env, jobject thiz, jboolean force) {
-    UNUSED_PARAM(env);
-    UNUSED_PARAM(thiz);
-    UNUSED_PARAM(force);
-
-    auto handler = GetSeatCraftViewCore(env, thiz);
-    if (handler == nullptr) {
-        return;
-    }
-    handler->draw(force);
-}
-
-JNIEXPORT jlong JNICALL Java_com_seatcraft_picker_SeatCraftPickerView_nativeSetupFromSurface(JNIEnv *env, jobject thiz, jobject assetManager, jobject surface, jfloat density) {
-    UNUSED_PARAM(env);
-    UNUSED_PARAM(thiz);
-    UNUSED_PARAM(surface);
-    UNUSED_PARAM(density);
-
-    auto assetMgr = AAssetManager_fromJava(env, assetManager);
-    if (assetMgr == nullptr) {
-        return 0L;
-    }
-
-    auto nativeWindow = ANativeWindow_fromSurface(env, surface);
-    if (nativeWindow == nullptr) {
-        return 0;
-    }
-    auto width = ANativeWindow_getWidth(nativeWindow);
-    auto height = ANativeWindow_getHeight(nativeWindow);
-    tgfx::Size bounds{
-        static_cast<float>(width),
-        static_cast<float>(height),
-    };
-    tgfx::Size contentSize{};
-    auto app = std::make_shared<kk::SeatCraftCoreApp>(bounds, contentSize, density);
-    app->setFileReader(std::make_shared<kk::AndroidFileReader>(assetMgr));
-
-    kk::SeatStatusSVGPathMap pathMap{
-        {1, "asset://icon_chooseSeat_canSelected.svg"},
-    };
-    app->updateSeatStatusSVGPathMap(pathMap);
-
-    auto backend = std::make_unique<kk::renderer::AndroidRendererBackend>(nativeWindow, density);
-    auto zoomPanController = std::make_unique<kk::ui::ElasticZoomPanController>();
-    auto handler = new kk::ui::SeatCraftViewCore(app, std::move(backend), std::move(zoomPanController));
-    auto ptr = reinterpret_cast<jlong>(handler);
-    return ptr;
-}
-
 JNIEXPORT void JNICALL Java_com_seatcraft_picker_SeatCraftPickerView_nativeSetAreaMapSvgData(JNIEnv *env, jobject thiz, jbyteArray areaSvgData) {
     auto handler = GetSeatCraftViewCore(env, thiz);
     if (handler == nullptr) {
@@ -152,6 +92,78 @@ JNIEXPORT void JNICALL Java_com_seatcraft_picker_SeatCraftPickerView_nativeSetAr
     }
     handler->updateAreaSvgPath(cStr);
     env->ReleaseStringUTFChars(areaSvgPath, cStr);
+}
+
+JNIEXPORT void JNICALL Java_com_seatcraft_picker_SeatCraftPickerView_nativeUpdateSurface(JNIEnv *env, jobject thiz, jobject surface, jfloat density) {
+    UNUSED_PARAM(env);
+    UNUSED_PARAM(thiz);
+    UNUSED_PARAM(surface);
+    auto handler = GetSeatCraftViewCore(env, thiz);
+    if (handler == nullptr) {
+        return;
+    }
+
+    if (surface == nullptr) {
+        handler->replaceBackend(nullptr);
+        return;
+    }
+
+    auto nativeWindow = ANativeWindow_fromSurface(env, surface);
+    if (nativeWindow == nullptr) {
+        handler->replaceBackend(nullptr);
+        return;
+    }
+
+    auto backend = std::make_unique<kk::renderer::AndroidRendererBackend>(nativeWindow, density);
+    handler->replaceBackend(std::move(backend));
+    handler->updateSize();
+}
+
+JNIEXPORT void JNICALL Java_com_seatcraft_picker_SeatCraftPickerView_nativeDraw(JNIEnv *env, jobject thiz, jboolean force) {
+    UNUSED_PARAM(env);
+    UNUSED_PARAM(thiz);
+    UNUSED_PARAM(force);
+
+    auto handler = GetSeatCraftViewCore(env, thiz);
+    if (handler == nullptr) {
+        return;
+    }
+    handler->draw(force);
+}
+
+JNIEXPORT jlong JNICALL Java_com_seatcraft_picker_SeatCraftPickerView_nativeCreate(JNIEnv *env, jobject thiz, jobject assetManager, jfloat density) {
+    UNUSED_PARAM(env);
+    UNUSED_PARAM(thiz);
+    UNUSED_PARAM(density);
+
+    auto assetMgr = AAssetManager_fromJava(env, assetManager);
+    if (assetMgr == nullptr) {
+        return 0L;
+    }
+
+    auto app = std::make_shared<kk::SeatCraftCoreApp>(tgfx::Size::MakeEmpty(), tgfx::Size::MakeEmpty(), density);
+    app->setFileReader(std::make_shared<kk::AndroidFileReader>(assetMgr));
+
+    kk::SeatStatusSVGPathMap pathMap{
+        {1, "asset://icon_chooseSeat_canSelected.svg"},
+    };
+    app->updateSeatStatusSVGPathMap(pathMap);
+
+    auto zoomPanController = std::make_unique<kk::ui::ElasticZoomPanController>();
+    auto handler = new kk::ui::SeatCraftViewCore(app, nullptr, std::move(zoomPanController));
+    auto ptr = reinterpret_cast<jlong>(handler);
+    return ptr;
+}
+
+JNIEXPORT void JNICALL Java_com_seatcraft_picker_SeatCraftPickerView_nativeRelease(JNIEnv *env, jobject thiz) {
+    UNUSED_PARAM(env);
+    UNUSED_PARAM(thiz);
+    auto handler = GetSeatCraftViewCore(env, thiz);
+    if (handler == nullptr) {
+        return;
+    }
+    delete handler;
+    env->SetLongField(thiz, SeatCraftPickerView_nativePtr, 0L);
 }
 
 JNIEXPORT void JNICALL Java_com_seatcraft_picker_SeatCraftPickerView_00024Companion_nativeInit(JNIEnv *env, jobject thiz) {

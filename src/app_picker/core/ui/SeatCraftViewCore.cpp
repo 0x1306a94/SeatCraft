@@ -31,14 +31,20 @@ SeatCraftViewCore::~SeatCraftViewCore() {
     tgfx::PrintLog("SeatCraftViewCore::~SeatCraftViewCore()");
 }
 
+void SeatCraftViewCore::replaceBackend(std::unique_ptr<kk::renderer::RendererBackend> backend) {
+    _renderer->replaceBackend(std::move(backend));
+}
+
 std::shared_ptr<kk::SeatCraftCoreApp> SeatCraftViewCore::getApp() const {
     return _app;
 }
 
 void SeatCraftViewCore::updateSize() {
-    _renderer->updateSize();
+    auto sizeChanged = _renderer->updateSize();
     _zoomPanController->setBounds(_app->getBoundsSize());
-    updateContentSize();
+    if (sizeChanged) {
+        updateContentSize();
+    }
 }
 
 void SeatCraftViewCore::setMaxWidth(float maxWidth) {

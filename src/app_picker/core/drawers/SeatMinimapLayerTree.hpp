@@ -30,6 +30,7 @@ class SeatMinimapLayerTree : public kk::drawers::Drawer {
     explicit SeatMinimapLayerTree();
 
     ~SeatMinimapLayerTree() override;
+    void invalidateAreaCacheImage();
     bool hasContentChanged() const;
     void prepare(tgfx::Canvas *canvas, const kk::SeatCraftCoreApp *app, bool force) override;
 
@@ -44,6 +45,7 @@ class SeatMinimapLayerTree : public kk::drawers::Drawer {
     tgfx::Size _viewSize{};
     tgfx::Size _containerSize{};
     kk::EdgeInsets _inset{};
+    bool _rebuildAreaCacheImage{true};
     std::shared_ptr<tgfx::ShapeLayer> _root{nullptr};
     std::shared_ptr<tgfx::ImageLayer> _areaLayer{nullptr};
     std::shared_ptr<tgfx::ShapeLayer> _lineBox{nullptr};

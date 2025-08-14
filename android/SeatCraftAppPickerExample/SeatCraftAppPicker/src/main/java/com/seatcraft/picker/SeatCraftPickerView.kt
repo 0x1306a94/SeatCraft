@@ -22,16 +22,19 @@ class SeatCraftPickerView : SurfaceView, SurfaceHolder.Callback, Choreographer.F
     private lateinit var gestureDetector: GestureDetector
 
     constructor(context: Context) : super(context) {
+        setupNativePtr()
         setupSurfaceHolder()
         setupGesture()
     }
 
     constructor(context: Context, attrs: AttributeSet) : super(context, attrs) {
+        setupNativePtr()
         setupSurfaceHolder()
         setupGesture()
     }
 
     constructor(context: Context, attrs: AttributeSet, defStyleAttr: Int) : super(context, attrs, defStyleAttr) {
+        setupNativePtr()
         setupSurfaceHolder()
         setupGesture()
     }
@@ -39,6 +42,11 @@ class SeatCraftPickerView : SurfaceView, SurfaceHolder.Callback, Choreographer.F
     private fun setupSurfaceHolder() {
         holder.addCallback(this)
         setZOrderOnTop(false)
+    }
+
+    private fun setupNativePtr() {
+        val metrics = resources.displayMetrics
+        nativePtr = nativeCreate(context.assets, metrics.density)
     }
 
     private fun setupGesture() {
@@ -123,16 +131,10 @@ class SeatCraftPickerView : SurfaceView, SurfaceHolder.Callback, Choreographer.F
     }
 
     override fun surfaceCreated(holder: SurfaceHolder) {
-        release()
         val metrics = resources.displayMetrics
         surface = holder.surface
-        nativePtr = nativeSetupFromSurface(context.assets, surface!!, metrics.density)
+        nativeUpdateSurface(surface!!, metrics.density)
         nativeUpdateSize()
-        if (areaMapSvgData != null) {
-            nativeSetAreaMapSvgData(areaMapSvgData)
-        } else if (areaMapSvgPath != null) {
-            nativeSetAreaMapSvgPath(areaMapSvgPath)
-        }
         nativeDraw(true)
         startDrawing()
     }
@@ -145,7 +147,8 @@ class SeatCraftPickerView : SurfaceView, SurfaceHolder.Callback, Choreographer.F
 
     override fun surfaceDestroyed(holder: SurfaceHolder) {
         stopDrawing()
-        release()
+        val metrics = resources.displayMetrics
+        nativeUpdateSurface(null, metrics.density)
     }
 
     private fun nativeInitialized(): Boolean {
@@ -159,6 +162,18 @@ class SeatCraftPickerView : SurfaceView, SurfaceHolder.Callback, Choreographer.F
             nativeRelease()
             nativePtr = 0
         }
+    }
+
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        if (!nativeInitialized()) {
+            setupNativePtr()
+        }
+    }
+
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
+        release()
     }
 
     /** 启动持续绘制（直到 stopDrawing 被调用） */
@@ -191,13 +206,14 @@ class SeatCraftPickerView : SurfaceView, SurfaceHolder.Callback, Choreographer.F
         }
     }
 
-    private external fun nativeSetupFromSurface(assetManager: AssetManager, surface: Surface, density: Float): Long
     private external fun nativeSetAreaMapSvgData(data: ByteArray?)
     private external fun nativeSetAreaMapSvgPath(path: String?)
     private external fun nativeUpdateSize()
     private external fun nativeUpdatePan(x: Float, y: Float)
     private external fun nativeUpdatePinch(scale: Float, cx: Float, cy: Float)
+    private external fun nativeUpdateSurface(surface: Surface?, density: Float)
     private external fun nativeDraw(force: Boolean)
+    private external fun nativeCreate(assetManager: AssetManager, density: Float): Long
     private external fun nativeRelease()
 
     companion object {
