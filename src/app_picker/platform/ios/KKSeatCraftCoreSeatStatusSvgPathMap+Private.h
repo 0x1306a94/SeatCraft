@@ -7,7 +7,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import "../../core/SeatStatusKey.h"
+#import "core/SeatStatusKey.h"
 
 NS_ASSUME_NONNULL_BEGIN
 

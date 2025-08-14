@@ -21,137 +21,50 @@ namespace kk::ui {
 
 class ElasticZoomPanController {
   public:
-    ElasticZoomPanController() = default;
-
+    ElasticZoomPanController();
+    virtual ~ElasticZoomPanController();
     // --- State Setters ---
-    void setBounds(const tgfx::Size &bounds) {
-        _bounds = bounds;
-    }
+    void setBounds(const tgfx::Size &bounds);
 
-    const tgfx::Size &getBounds() const {
-        return _bounds;
-    }
+    const tgfx::Size &getBounds() const;
 
-    void setContentSize(const tgfx::Size &contentSize) {
-        _contentSize = contentSize;
-    }
+    void setContentSize(const tgfx::Size &contentSize);
 
-    const tgfx::Size &getContentSize() const {
-        return _contentSize;
-    }
+    const tgfx::Size &getContentSize() const;
 
-    void setContentInset(const EdgeInsets &contentInset) {
-        _contentInset = contentInset;
-    }
+    void setContentInset(const EdgeInsets &contentInset);
 
-    const EdgeInsets &getContentInset() const {
-        return _contentInset;
-    }
+    const EdgeInsets &getContentInset() const;
 
-    void setMinimumZoomScale(float minimumZoomScale) {
-        _minimumZoomScale = minimumZoomScale;
-    }
+    void setMinimumZoomScale(float minimumZoomScale);
 
-    float getMinimumZoomScale() const {
-        return _minimumZoomScale;
-    }
+    float getMinimumZoomScale() const;
 
-    void setMaximumZoomScale(float maximumZoomScale) {
-        _maximumZoomScale = maximumZoomScale;
-    }
+    void setMaximumZoomScale(float maximumZoomScale);
 
-    float getMaximumZoomScale() const {
-        return _maximumZoomScale;
-    }
+    float getMaximumZoomScale() const;
 
-    void setZoomScale(float zoomScale) {
-        _zoomScale = std::clamp(zoomScale, _minimumZoomScale, _maximumZoomScale);
-        revalidateContentOffset();
-    }
+    virtual void setZoomScale(float zoomScale);
 
-    float getZoomScale() const {
-        return _zoomScale;
-    }
+    float getZoomScale() const;
 
-    void setContentOffset(const tgfx::Point &contentOffset) {
-        _contentOffset = contentOffset;
-        revalidateContentOffset();
-    }
+    virtual void setContentOffset(const tgfx::Point &contentOffset);
 
-    tgfx::Point getContentOffset() const {
-        return _contentOffset;
-    }
+    tgfx::Point getContentOffset() const;
 
     // --- Transformation Matrix ---
-    tgfx::Matrix getMatrix() const {
-        tgfx::Matrix matrix;
-        matrix.setScale(_zoomScale, _zoomScale);
-        matrix.preTranslate(_contentOffset.x, _contentOffset.y);
-        return matrix;
-    }
+    tgfx::Matrix getMatrix() const;
 
     // --- Gesture Handlers (Simulating User Input) ---
-    void handlePan(const tgfx::Point &delta) {
-        _contentOffset.x += delta.x;
-        _contentOffset.y += delta.y;
-        revalidateContentOffset();
-    }
+    virtual void handlePan(const tgfx::Point &delta);
 
-    void handlePinch(float scale, const tgfx::Point &center) {
-        float contentPointX = (center.x - _contentOffset.x) / _zoomScale;
-        float contentPointY = (center.y - _contentOffset.y) / _zoomScale;
+    virtual void handlePinch(float scale, const tgfx::Point &center);
 
-        float newZoomScale = _zoomScale * scale;
-        _zoomScale = std::clamp(newZoomScale, _minimumZoomScale, _maximumZoomScale);
-
-        float newOffsetX = center.x - contentPointX * _zoomScale;
-        float newOffsetY = center.y - contentPointY * _zoomScale;
-
-        _contentOffset.x = newOffsetX;
-        _contentOffset.y = newOffsetY;
-
-        revalidateContentOffset();
-    }
-
-  private:
+  protected:
     // --- Internal Logic ---
-    void revalidateContentOffset() {
-        const float scaledWidth = _contentSize.width * _zoomScale;
-        const float scaledHeight = _contentSize.height * _zoomScale;
+    virtual void revalidateContentOffset();
 
-        // 考虑 contentInset 后的视图有效边界
-        const float effectiveBoundsWidth = _bounds.width - _contentInset.left - _contentInset.right;
-        const float effectiveBoundsHeight = _bounds.height - _contentInset.top - _contentInset.bottom;
-
-        // 计算水平方向的边界
-        float minX, maxX;
-        if (scaledWidth < effectiveBoundsWidth) {
-            // 内容小于有效边界，居中对齐，并考虑 left/right inset
-            minX = (_bounds.width - scaledWidth) / 2.0f;
-            maxX = minX;
-        } else {
-            // 内容大于有效边界，允许滚动
-            // 注意：平移的边界应该加上 contentInset
-            minX = -scaledWidth + effectiveBoundsWidth + _contentInset.left;
-            maxX = _contentInset.left;
-        }
-
-        // 计算垂直方向的边界
-        float minY, maxY;
-        if (scaledHeight < effectiveBoundsHeight) {
-            // 内容小于有效边界，居中对齐，并考虑 top/bottom inset
-            minY = (_bounds.height - scaledHeight) / 2.0f;
-            maxY = minY;
-        } else {
-            // 内容大于有效边界，允许滚动
-            minY = -scaledHeight + effectiveBoundsHeight + _contentInset.top;
-            maxY = _contentInset.top;
-        }
-
-        _contentOffset.x = std::clamp(_contentOffset.x, minX, maxX);
-        _contentOffset.y = std::clamp(_contentOffset.y, minY, maxY);
-    }
-
+  protected:
     // --- Private Members ---
     float _minimumZoomScale{1.0f};
     float _maximumZoomScale{1.0f};

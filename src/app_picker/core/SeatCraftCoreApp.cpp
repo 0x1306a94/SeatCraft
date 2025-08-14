@@ -22,11 +22,11 @@ SeatCraftCoreApp::SeatCraftCoreApp(const tgfx::Size &boundSize, const tgfx::Size
     , _contentSize(contentSize)
     , _density(density)
     , _fileReader(std::make_shared<kk::FileReader>()) {
-    tgfx::PrintLog("SeatCraftCoreApp::SeatCraftCoreApp()");
+    tgfx::PrintLog("%s", __PRETTY_FUNCTION__);
 }
 
 SeatCraftCoreApp::~SeatCraftCoreApp() {
-    tgfx::PrintLog("SeatCraftCoreApp::~SeatCraftCoreApp()");
+    tgfx::PrintLog("%s", __PRETTY_FUNCTION__);
 }
 
 void SeatCraftCoreApp::setFileReader(std::shared_ptr<FileReader> fileReader) {
@@ -67,7 +67,7 @@ const kk::SeatStatusSVGPathMap &SeatCraftCoreApp::getSeatStatusSvgMap() const {
 
 bool SeatCraftCoreApp::updateContentSize(const tgfx::Size &contentSize) {
     if (contentSize.width <= 0 || contentSize.height <= 0) {
-        tgfx::PrintError("SeatCraftCoreApp::updateContentSize() width or height is invalid!");
+        tgfx::PrintError("%s width or height is invalid!", __PRETTY_FUNCTION__);
         return false;
     }
 
@@ -80,11 +80,11 @@ bool SeatCraftCoreApp::updateContentSize(const tgfx::Size &contentSize) {
 
 bool SeatCraftCoreApp::updateScreen(const tgfx::Size &boundSize, float density) {
     if (boundSize.width <= 0 || boundSize.height <= 0) {
-        tgfx::PrintError("SeatCraftCoreApp::updateScreen() width or height is invalid!");
+        tgfx::PrintError("%s width or height is invalid!", __PRETTY_FUNCTION__);
         return false;
     }
     if (density < 1.0) {
-        tgfx::PrintError("SeatCraftCoreApp::updateScreen() density is invalid!");
+        tgfx::PrintError("%s density is invalid!", __PRETTY_FUNCTION__);
         return false;
     }
     if (boundSize == _boundSize && density == _density) {
@@ -111,7 +111,7 @@ bool SeatCraftCoreApp::updateAreaSvgPath(const std::string &path) {
 
     namespace fs = std::filesystem;
     if (!fs::exists(path)) {
-        tgfx::PrintError("SeatCraftCoreApp::updateAreaSvgPath() path does not exist!");
+        tgfx::PrintError("%s path does not exist!", __PRETTY_FUNCTION__);
         _svgDom = nullptr;
         return false;
     }

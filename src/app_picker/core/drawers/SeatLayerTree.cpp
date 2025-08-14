@@ -40,10 +40,11 @@ SeatLayerTree::SeatLayerTree()
     , _root(nullptr)
     , _seatLayer(nullptr)
     , _displayList(std::make_unique<tgfx::DisplayList>()) {
+    tgfx::PrintLog("%s", __PRETTY_FUNCTION__);
 };
 
 SeatLayerTree::~SeatLayerTree() {
-    tgfx::PrintLog("SeatLayerTree::~SeatLayerTree");
+    tgfx::PrintLog("%s", __PRETTY_FUNCTION__);
 }
 
 bool SeatLayerTree::hasContentChanged() const {

@@ -10,14 +10,13 @@
 
 #import <SeatCraft/common/common_macro.h>
 
-#import "KKSeatCraftCoreBackendView.h"
-
-#import "KKSeatCraftCoreSeatStatusSvgPathMap+Private.h"
-
 #import "core/SeatCraftCoreApp.hpp"
 #import "core/renderer/SeatCraftCoreRenderer.hpp"
 #import "core/ui/ElasticZoomPanController.hpp"
 
+#import "KKSeatCraftCoreBackendView.h"
+#import "KKSeatCraftCoreSeatStatusSvgPathMap+Private.h"
+#import "UIScrollViewZoomPanController.h"
 #import "renderer/IOSRendererBackend.h"
 
 #define USE_UISCROLLVIEW_TRICK 1
@@ -129,7 +128,7 @@
     _app = std::make_shared<kk::SeatCraftCoreApp>();
     auto backend = std::make_unique<kk::renderer::IOSRendererBackend>((CAEAGLLayer *)self.backendView.layer);
     _renderer = std::make_unique<kk::renderer::SeatCraftCoreRenderer>(_app, std::move(backend));
-    _zoomPanController = std::make_unique<kk::ui::ElasticZoomPanController>();
+    _zoomPanController = std::make_unique<kk::ui::UIScrollViewZoomPanController>();
 }
 
 - (void)setupViews {
@@ -239,13 +238,10 @@
 #endif
 
 - (void)updateZoomPanControllerState {
-#if !USE_UISCROLLVIEW_TRICK
-
     float currentZoom = _zoomPanController->getZoomScale();
     tgfx::Point currentOffset = _zoomPanController->getContentOffset();
 
     [self updateZoom:currentZoom contentOffset:currentOffset];
-#endif
 }
 
 - (void)setupDisplayLink {
@@ -414,8 +410,10 @@
         static_cast<float>(tgfxOffsetPoints.y * contentScaleFactor),
     };
 
-    // 将缩放和偏移量传递给 tgfx 渲染器
-    [self updateZoom:zoomScale contentOffset:tgfxOffsetPixels];
+    _zoomPanController->setZoomScale(zoomScale);
+    _zoomPanController->setContentOffset(tgfxOffsetPixels);
+
+    [self updateZoomPanControllerState];
 }
 
 #pragma mark - UIScrollViewDelegate

@@ -30,10 +30,11 @@ SeatMinimapLayerTree::SeatMinimapLayerTree()
     , _lineBox(nullptr)
     , _displayList(std::make_unique<tgfx::DisplayList>())
     , _areaCacheImage(nullptr) {
+    tgfx::PrintLog("%s", __PRETTY_FUNCTION__);
 }
 
 SeatMinimapLayerTree::~SeatMinimapLayerTree() {
-    tgfx::PrintLog("SeatMinimapLayerTree::~SeatMinimapLayerTree");
+    tgfx::PrintLog("%s", __PRETTY_FUNCTION__);
 }
 
 bool SeatMinimapLayerTree::hasContentChanged() const {

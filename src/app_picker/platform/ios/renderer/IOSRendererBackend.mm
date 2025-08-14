@@ -10,7 +10,7 @@
 #import <tgfx/gpu/opengl/eagl/EAGLWindow.h>
 #include <tgfx/platform/Print.h>
 
-#import "../../../core/SeatCraftCoreApp.hpp"
+#import "core/SeatCraftCoreApp.hpp"
 
 #import <cmath>
 
@@ -18,10 +18,11 @@ namespace kk::renderer {
 
 IOSRendererBackend::IOSRendererBackend(CAEAGLLayer *eagLayer)
     : _eagLayer(eagLayer) {
+    tgfx::PrintLog("%s", __PRETTY_FUNCTION__);
 }
 
 IOSRendererBackend::~IOSRendererBackend() {
-    tgfx::PrintLog("IOSRendererBackend::~IOSRendererBackend");
+    tgfx::PrintLog("%s", __PRETTY_FUNCTION__);
 }
 
 std::shared_ptr<tgfx::Window> IOSRendererBackend::getWindow() {

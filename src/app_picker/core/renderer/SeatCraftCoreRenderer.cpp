@@ -30,11 +30,12 @@ SeatCraftCoreRenderer::SeatCraftCoreRenderer(std::shared_ptr<kk::SeatCraftCoreAp
     , _seatLayer(std::make_unique<kk::drawers::SeatLayerTree>())
     , _minimapLayer(std::make_unique<kk::drawers::SeatMinimapLayerTree>()) {
 
+    tgfx::PrintLog("%s", __PRETTY_FUNCTION__);
     updateSize();
 }
 
 SeatCraftCoreRenderer::~SeatCraftCoreRenderer() {
-    tgfx::PrintLog("SeatCraftCoreRenderer::~SeatCraftCoreRenderer");
+    tgfx::PrintLog("%s", __PRETTY_FUNCTION__);
 }
 
 void SeatCraftCoreRenderer::updateSize() {

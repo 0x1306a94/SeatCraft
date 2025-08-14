@@ -75,10 +75,11 @@ GridBackgroundLayerTree::GridBackgroundLayerTree()
     : kk::drawers::Drawer("GridBackgroundLayerTree")
     , _root(nullptr)
     , _displayList(std::make_unique<tgfx::DisplayList>()) {
+    tgfx::PrintLog("%s", __PRETTY_FUNCTION__);
 }
 
 GridBackgroundLayerTree::~GridBackgroundLayerTree() {
-    tgfx::PrintLog("GridBackgroundLayerTree::~GridBackgroundLayerTree");
+    tgfx::PrintLog("%s", __PRETTY_FUNCTION__);
 }
 
 bool GridBackgroundLayerTree::hasContentChanged() const {
