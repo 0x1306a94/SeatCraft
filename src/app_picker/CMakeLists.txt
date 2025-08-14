@@ -15,83 +15,50 @@ else()
   set(SEAT_CRAFT_APP_PICKER_BUILD_FRAMEWORK OFF)
 endif()
 
-
-file(GLOB_RECURSE APP_PICKER_PUBLIC_HEADERS ${SEAT_CRAFT_ROOT_INCLUDE_DIR}/${PROJECT_NAME}/platform/ios/*.h)
-message(STATUS "APP_PICKER_PUBLIC_HEADERS: ${APP_PICKER_PUBLIC_HEADERS}")
-
-file(GLOB_RECURSE APP_PICKER_PRIVATE_HEADERS ./*.h)
-list(APPEND APP_PICKER_FILES ${APP_PICKER_PRIVATE_HEADERS})
-
-file(GLOB_RECURSE APP_PICKER_CORE_FILES
-    core/*.h core/*.hpp core/*.cpp
-    core/ui/*.h core/ui/*.hpp core/ui/*.cpp
-    core/svg/*.h core/svg/*.hpp core/svg/*.cpp
-    core/renderer/*.h core/renderer/*.hpp core/renderer/*.cpp
-    core/drawers/*.h core/drawers/*.hpp core/drawers/*.cpp
+add_files_by_extension(APP_PICKER_CORE_FILES ".h;.hpp;.cpp"
+    core
+    core/renderer
+    core/ui
+    core/svg
+    core/drawers
 )
 
 list(APPEND APP_PICKER_FILES ${APP_PICKER_CORE_FILES})
 
 if(IOS)
-    file(GLOB_RECURSE APP_PICKER_PLATFORM_IOS_FILES
-        platform/ios/*.h platform/ios/*.m platform/ios/*.mm
-        platform/ios/renderer/*.h platform/ios/renderer/*.m platform/ios/renderer/*.mm
+    message(STATUS "IOS: ${IOS}")
+    add_files_by_extension(APP_PICKER_PLATFORM_IOS_FILES ".h;.hpp;.m;.mm;.cpp"
+        platform/ios
+        platform/renderer
     )
     list(APPEND APP_PICKER_FILES ${APP_PICKER_PLATFORM_IOS_FILES})
+    
+    file(GLOB_RECURSE APP_PICKER_PLATFORM_IOS_PUBLIC_HEADERS ${SEAT_CRAFT_ROOT_INCLUDE_DIR}/${PROJECT_NAME}/platform/ios/*.h)
+    message(STATUS "APP_PICKER_PLATFORM_IOS_PUBLIC_HEADERS: ${APP_PICKER_PLATFORM_IOS_PUBLIC_HEADERS}")
+    list(APPEND APP_PICKER_PUBLIC_HEADERS ${APP_PICKER_PLATFORM_IOS_PUBLIC_HEADERS})
 
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -exported_symbols_list ${SEAT_CRAFT_ROOT_DIR}/ios/SeatCraftAppPicker.lds")
 elseif(ANDROID)
+    message(STATUS "ANDROID: ${ANDROID}")
     find_library(LOG_LIB log)
     list(APPEND SEAT_CRAFT_APP_PICKER_SHARED_LIBS ${LOG_LIB})
     find_library(ANDROID_LIB android)
     list(APPEND SEAT_CRAFT_APP_PICKER_SHARED_LIBS ${ANDROID_LIB})
 
-    file(GLOB_RECURSE APP_PICKER_PLATFORM_IOS_FILES
-        platform/android/*.h platform/android/*.hpp platform/android/*.cpp
-        platform/android/jni/*.h platform/android/jni/*.hpp platform/jni/*.cpp
-        platform/android/ui/*.h platform/android/ui/*.hpp platform/ui/*.cpp
-        platform/android/renderer/*.h platform/android/renderer/*.hpp platform/android/renderer/*.cpp
+    add_files_by_extension(APP_PICKER_PLATFORM_ANDROID_FILES ".h;.hpp;.cpp"
+        platform/android
+        platform/android/jni
+        platform/android/ui
+        platform/android/renderer
     )
-    list(APPEND APP_PICKER_FILES ${APP_PICKER_PLATFORM_IOS_FILES})
+    list(APPEND APP_PICKER_FILES ${APP_PICKER_PLATFORM_ANDROID_FILES})
 
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-z,max-page-size=16384 -Wl,--gc-sections -Wl,--version-script=${SEAT_CRAFT_ROOT_DIR}/android/SeatCraftAppPicker.def")
 endif()
 
-foreach(source_file IN LISTS APP_PICKER_FILES)
-    file(RELATIVE_PATH rel_path "${CMAKE_CURRENT_SOURCE_DIR}" "${source_file}")
-    get_filename_component(group_path "${rel_path}" DIRECTORY)
-    if(group_path STREQUAL "")
-        set(group_path "Root")
-    endif()
-    source_group("${group_path}" FILES "${source_file}")
-endforeach()
-
-foreach(header IN LISTS SEAT_CRAFT_COMMON_PUBLIC_HEADERS)
-    file(RELATIVE_PATH rel_path "${SEAT_CRAFT_ROOT_INCLUDE_DIR}" "${header}")
-    get_filename_component(group_path "${rel_path}" DIRECTORY)
-    if(group_path STREQUAL "")
-        set(group_path "PublicHeaders")
-    endif()
-    source_group("PublicHeaders\\${group_path}" FILES "${header}")
-endforeach()
-
-foreach(header IN LISTS APP_PICKER_PUBLIC_HEADERS)
-    file(RELATIVE_PATH rel_path "${SEAT_CRAFT_ROOT_INCLUDE_DIR}" "${header}")
-    get_filename_component(group_path "${rel_path}" DIRECTORY)
-    if(group_path STREQUAL "")
-        set(group_path "PublicHeaders")
-    endif()
-    source_group("PublicHeaders\\${group_path}" FILES "${header}")
-endforeach()
-
-foreach(source_file IN LISTS APP_PICKER_FILES)
-    file(RELATIVE_PATH rel_path "${CMAKE_CURRENT_SOURCE_DIR}" "${source_file}")
-    get_filename_component(group_path "${rel_path}" DIRECTORY)
-    if(group_path STREQUAL "")
-        set(group_path "Source")
-    endif()
-    source_group("Source\\${group_path}" FILES "${source_file}")
-endforeach()
+add_source_group(SEAT_CRAFT_COMMON_PUBLIC_HEADERS ${SEAT_CRAFT_ROOT_INCLUDE_DIR} "PublicHeaders")
+add_source_group(APP_PICKER_PUBLIC_HEADERS ${SEAT_CRAFT_ROOT_INCLUDE_DIR} "PublicHeaders")
+add_source_group(APP_PICKER_FILES ${CMAKE_CURRENT_SOURCE_DIR} "Sources")
 
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0 -g")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0 -g")

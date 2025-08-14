@@ -1,0 +1,35 @@
+
+macro(add_files_by_extension target_var extensions)
+  set(directories ${ARGN})
+  if(NOT DEFINED ENV{extensions})
+    string(REGEX MATCH "^.*;.*;.*$" IS_LIST_STRING "${extensions}")
+    if(NOT IS_LIST_STRING)
+      string(REPLACE ";" " " extensions "${extensions}")
+      string(REGEX REPLACE "([^\ ]+)" "\\1;" extensions "${extensions}")
+    endif()
+  endif()
+
+  set(${target_var} "" PARENT_SCOPE)
+
+  foreach(dir ${directories})
+    foreach(ext ${extensions})
+      set(glob_pattern "${dir}/*${ext}")
+      file(GLOB_RECURSE temp_files ${glob_pattern})
+      list(APPEND ${target_var} ${temp_files})
+    endforeach()
+  endforeach()
+
+  set(${target_var} "${${target_var}}" PARENT_SCOPE)
+endmacro()
+
+
+macro(add_source_group files base_dir group_prefix)
+  foreach(file IN LISTS ${files})
+    file(RELATIVE_PATH rel_path "${base_dir}" "${file}")
+    get_filename_component(group_path "${rel_path}" DIRECTORY)
+    if(group_path STREQUAL "")
+      set(group_path "${group_prefix}")
+    endif()
+    source_group("${group_prefix}\\${group_path}" FILES "${file}")
+  endforeach()
+endmacro()
