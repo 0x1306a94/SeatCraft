@@ -118,9 +118,6 @@ JNIEXPORT jlong JNICALL Java_com_seatcraft_picker_SeatCraftPickerView_nativeSetu
 }
 
 JNIEXPORT void JNICALL Java_com_seatcraft_picker_SeatCraftPickerView_nativeSetAreaMapSvgData(JNIEnv *env, jobject thiz, jbyteArray areaSvgData) {
-    UNUSED_PARAM(env);
-    UNUSED_PARAM(thiz);
-    UNUSED_PARAM(areaSvgData);
     auto handler = GetSeatCraftViewCore(env, thiz);
     if (handler == nullptr) {
         return;
@@ -136,6 +133,25 @@ JNIEXPORT void JNICALL Java_com_seatcraft_picker_SeatCraftPickerView_nativeSetAr
     auto stream = tgfx::Stream::MakeFromData(std::move(data));
     env->ReleaseByteArrayElements(areaSvgData, bytes, 0);
     handler->updateAreaSvgData(std::move(stream));
+}
+
+JNIEXPORT void JNICALL Java_com_seatcraft_picker_SeatCraftPickerView_nativeSetAreaMapSvgPath(JNIEnv *env, jobject thiz, jstring areaSvgPath) {
+    auto handler = GetSeatCraftViewCore(env, thiz);
+    if (handler == nullptr) {
+        return;
+    }
+    if (areaSvgPath == nullptr) {
+        handler->updateAreaSvgPath("");
+        return;
+    }
+
+    const char *cStr = env->GetStringUTFChars(areaSvgPath, nullptr);
+    if (cStr == nullptr) {
+        handler->updateAreaSvgPath("");
+        return;
+    }
+    handler->updateAreaSvgPath(cStr);
+    env->ReleaseStringUTFChars(areaSvgPath, cStr);
 }
 
 JNIEXPORT void JNICALL Java_com_seatcraft_picker_SeatCraftPickerView_00024Companion_nativeInit(JNIEnv *env, jobject thiz) {

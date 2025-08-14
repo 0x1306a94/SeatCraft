@@ -14,8 +14,6 @@
 #include <tgfx/platform/Print.h>
 #include <tgfx/svg/SVGDOM.h>
 
-#include <filesystem>
-
 namespace kk {
 SeatCraftCoreApp::SeatCraftCoreApp(const tgfx::Size &boundSize, const tgfx::Size &contentSize, float density)
     : _boundSize(boundSize)
@@ -119,19 +117,23 @@ bool SeatCraftCoreApp::updateZoomAndOffset(float zoomScale, const tgfx::Point &c
 }
 
 bool SeatCraftCoreApp::updateAreaSvgPath(const std::string &path) {
-    if (_areaSvgPath == path) {
+    if (_areaSvgPath == path || _fileReader == nullptr) {
         return false;
     }
 
-    namespace fs = std::filesystem;
-    if (!fs::exists(path)) {
-        tgfx::PrintError("%s path does not exist!", __PRETTY_FUNCTION__);
+    auto data = _fileReader->readData(path);
+    if (data == nullptr) {
+        _svgDom = nullptr;
+        return false;
+    }
+    auto stream = tgfx::Stream::MakeFromData(data);
+    if (stream == nullptr) {
         _svgDom = nullptr;
         return false;
     }
 
     _areaSvgPath = path;
-    _svgDom = kk::svg::loadSvgDom(path);
+    _svgDom = kk::svg::loadSvgDom(stream.get());
     return true;
 }
 

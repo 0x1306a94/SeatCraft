@@ -31,10 +31,7 @@ class SecondFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        val data = readAssetFileToByteArray(this.requireContext(), "performbg_2.svg")
-        if (data != null) {
-            binding.pickerView.setAreaMapSvgData(data)
-        }
+        binding.pickerView.setAreaMapSvgPath("asset://svg/performbg_2.svg")
     }
 
     override fun onDestroyView() {

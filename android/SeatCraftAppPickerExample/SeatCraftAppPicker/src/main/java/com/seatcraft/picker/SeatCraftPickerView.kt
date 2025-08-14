@@ -15,6 +15,7 @@ class SeatCraftPickerView : SurfaceView, SurfaceHolder.Callback, Choreographer.F
     private var surface: Surface? = null
     private var nativePtr: Long = 0
     private var areaMapSvgData: ByteArray? = null
+    private var areaMapSvgPath: String? = null
     private var isScaling = false
     private var isDrawing = false // 是否在进行持续绘制
     private lateinit var scaleGestureDetector: ScaleGestureDetector
@@ -47,6 +48,7 @@ class SeatCraftPickerView : SurfaceView, SurfaceHolder.Callback, Choreographer.F
                 override fun onScaleBegin(detector: ScaleGestureDetector): Boolean {
                     isScaling = true
                     stopDrawing()
+                    nativeUpdatePinch(detector.scaleFactor, detector.focusX, detector.focusY)
                     notifyNativeDraw(true)
                     return true
                 }
@@ -96,8 +98,18 @@ class SeatCraftPickerView : SurfaceView, SurfaceHolder.Callback, Choreographer.F
 
     fun setAreaMapSvgData(data: ByteArray?) {
         areaMapSvgData = data
+        areaMapSvgPath = null
         if (nativeInitialized()) {
             nativeSetAreaMapSvgData(data)
+            nativeDraw(true)
+        }
+    }
+
+    fun setAreaMapSvgPath(path: String?) {
+        areaMapSvgData = null
+        areaMapSvgPath = path
+        if (nativeInitialized()) {
+            nativeSetAreaMapSvgPath(path)
             nativeDraw(true)
         }
     }
@@ -116,7 +128,11 @@ class SeatCraftPickerView : SurfaceView, SurfaceHolder.Callback, Choreographer.F
         surface = holder.surface
         nativePtr = nativeSetupFromSurface(context.assets, surface!!, metrics.density)
         nativeUpdateSize()
-        nativeSetAreaMapSvgData(areaMapSvgData)
+        if (areaMapSvgData != null) {
+            nativeSetAreaMapSvgData(areaMapSvgData)
+        } else if (areaMapSvgPath != null) {
+            nativeSetAreaMapSvgPath(areaMapSvgPath)
+        }
         nativeDraw(true)
         startDrawing()
     }
@@ -177,6 +193,7 @@ class SeatCraftPickerView : SurfaceView, SurfaceHolder.Callback, Choreographer.F
 
     private external fun nativeSetupFromSurface(assetManager: AssetManager, surface: Surface, density: Float): Long
     private external fun nativeSetAreaMapSvgData(data: ByteArray?)
+    private external fun nativeSetAreaMapSvgPath(path: String?)
     private external fun nativeUpdateSize()
     private external fun nativeUpdatePan(x: Float, y: Float)
     private external fun nativeUpdatePinch(scale: Float, cx: Float, cy: Float)
