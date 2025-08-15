@@ -40,7 +40,7 @@ class SeatCraftViewCore {
 
     std::shared_ptr<kk::SeatCraftCoreApp> getApp() const;
     // 视图尺寸更新，由平台层调用
-    void updateSize();
+    bool updateSize();
 
     void setMaxWidth(float maxWidth);
     float getMaxWidth() const;

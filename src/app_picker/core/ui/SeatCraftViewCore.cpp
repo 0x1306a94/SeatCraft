@@ -39,12 +39,14 @@ std::shared_ptr<kk::SeatCraftCoreApp> SeatCraftViewCore::getApp() const {
     return _app;
 }
 
-void SeatCraftViewCore::updateSize() {
+bool SeatCraftViewCore::updateSize() {
     auto sizeChanged = _renderer->updateSize();
     _zoomPanController->setBounds(_app->getBoundsSize());
     if (sizeChanged) {
         updateContentSize();
+        return true;
     }
+    return false;
 }
 
 void SeatCraftViewCore::setMaxWidth(float maxWidth) {

@@ -366,9 +366,11 @@
 
 #pragma mark - KKSeatCraftCoreBackendViewDelegate
 - (void)seatCraftCoreBackendViewDidUpdateSize:(KKSeatCraftCoreBackendView *)backendView {
-    _viewCore->updateSize();
+    auto sizeChanged = _viewCore->updateSize();
 #if USE_UISCROLLVIEW_TRICK
-    [self updateContentSize];
+    if (sizeChanged) {
+        [self updateContentSize];
+    }
 #endif
 }
 
