@@ -4,7 +4,7 @@
 #include <tgfx/gpu/opengl/egl/EGLWindow.h>
 #include <tgfx/platform/Print.h>
 
-#include "../../../core/SeatCraftCoreApp.hpp"
+#include "core/SeatCraftCoreApp.hpp"
 
 #include <cmath>
 

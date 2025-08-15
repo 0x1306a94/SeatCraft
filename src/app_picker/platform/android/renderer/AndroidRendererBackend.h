@@ -2,7 +2,7 @@
 #ifndef __AndroidRendererBackend_h__
 #define __AndroidRendererBackend_h__
 
-#include "../../../core/renderer/RendererBackend.hpp"
+#include "core/renderer/RendererBackend.hpp"
 
 #include <android/native_window_jni.h>
 

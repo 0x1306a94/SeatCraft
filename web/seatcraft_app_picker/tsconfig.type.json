@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "lib": ["ES5", "ES6", "DOM", "DOM.Iterable", "WebWorker"],
+    "target": "ES2020",
+    "declaration": true,
+    "declarationDir": "./types",
+    "emitDeclarationOnly": true,
+    "removeComments": false,
+    "skipLibCheck": true,
+    "experimentalDecorators": true,
+    "moduleResolution": "Node",
+    "baseUrl": ".", 
+    "paths": {
+      "@seatcraft_app_picker/*": ["./src/*"]
+    },
+    "resolveJsonModule": true
+  },
+  "include": ["src/binding.ts"]
+}

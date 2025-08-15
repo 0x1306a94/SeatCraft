@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+    content="width=device-width,initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no" />
+  <meta name="full-screen" content="true" />
+  <title>SeatCraft WASM Demo</title>
+  <style>
+    html,
+    body {
+      padding: 0;
+      border: 0;
+      margin: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .container {
+      position: relative;
+      overflow: hidden;
+      margin: auto;
+      width: 100%;
+      height: 100%;
+    }
+
+    .seatcraft_picker_view {
+      cursor: inherit;
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 999999;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="container" class="container">
+    <canvas class="canvas" id="seatcraft_picker_view"></canvas>
+  </div>
+  <script type="module" src="index.js"></script>
+</body>
+
+</html>

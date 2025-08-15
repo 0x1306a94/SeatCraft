@@ -1,0 +1,25 @@
+{
+  "name": "app_picker_example",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "rollup -c",
+    "start": "npm run build && node server.js",
+    "dev": "concurrently \"rollup -c -w\" \"node server.js\""
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^28.0.6",
+    "@rollup/plugin-json": "^6.1.0",
+    "@rollup/plugin-node-resolve": "^16.0.1",
+    "@types/emscripten": "^1.40.1",
+    "concurrently": "^9.2.0",
+    "express": "^5.1.0",
+    "rollup": "^4.24.0",
+    "rollup-plugin-copy": "^3.5.0",
+    "rollup-plugin-esbuild": "^6.2.1",
+    "typescript": "^5.9.2",
+    "esbuild": "^0.25.9"
+  },
+  "dependencies": {
+    "seatcraft_app_picker": "file:../seatcraft_app_picker"
+  }
+}

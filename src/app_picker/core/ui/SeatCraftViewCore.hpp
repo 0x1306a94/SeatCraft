@@ -60,6 +60,7 @@ class SeatCraftViewCore {
     // 手势处理方法，由平台层调用
     void handlePan(const tgfx::Point &delta);
     void handlePinch(float scale, const tgfx::Point &center);
+
     float getMinimumZoomScale() const;
     float getMaximumZoomScale() const;
     float getZoomScale() const;

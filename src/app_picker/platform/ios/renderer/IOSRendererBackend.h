@@ -5,7 +5,7 @@
 //  Created by king on 2025/8/7.
 //
 
-#import "../../../core/renderer/RendererBackend.hpp"
+#import "core/renderer/RendererBackend.hpp"
 
 #import <QuartzCore/CAEAGLLayer.h>
 

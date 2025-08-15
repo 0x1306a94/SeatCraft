@@ -54,6 +54,38 @@ elseif(ANDROID)
     list(APPEND APP_PICKER_FILES ${APP_PICKER_PLATFORM_ANDROID_FILES})
 
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-z,max-page-size=16384 -Wl,--gc-sections -Wl,--version-script=${SEAT_CRAFT_ROOT_DIR}/android/SeatCraftAppPicker.def")
+elseif(DEFINED EMSCRIPTEN)
+    list(APPEND APP_PICKER_PLATFORM_WEB_COMPILE_OPTIONS -fno-rtti -DEMSCRIPTEN_HAS_UNBOUND_TYPE_NAMES=0)
+    list(APPEND APP_PICKER_PLATFORM_WEB_LINK_OPTIONS --no-entry -lembind -fno-rtti -DEMSCRIPTEN_HAS_UNBOUND_TYPE_NAMES=0 -sEXPORT_NAME='${PROJECT_NAME}' -sWASM=1
+            -sMAX_WEBGL_VERSION=2 -sEXPORTED_RUNTIME_METHODS=['GL','HEAPU8'] -sMODULARIZE=1
+            -sENVIRONMENT=web,worker -sEXPORT_ES6=1)
+    set(unsupported_emsdk_versions "4.0.11")
+    foreach (unsupported_version IN LISTS unsupported_emsdk_versions)
+        if (${EMSCRIPTEN_VERSION} VERSION_EQUAL ${unsupported_version})
+            message(FATAL_ERROR "Emscripten version ${EMSCRIPTEN_VERSION} is not supported.")
+        endif ()
+    endforeach ()
+    if(EMSCRIPTEN_PTHREADS)
+        list(APPEND APP_PICKER_PLATFORM_WEB_LINK_OPTIONS -sUSE_PTHREADS=1 -sINITIAL_MEMORY=32MB -sALLOW_MEMORY_GROWTH=1
+                -sPTHREAD_POOL_SIZE=navigator.hardwareConcurrency -sPROXY_TO_PTHREAD=1
+                -sEXIT_RUNTIME=0 -sINVOKE_RUN=0 -sMALLOC=mimalloc)
+        list(APPEND APP_PICKER_PLATFORM_WEB_COMPILE_OPTIONS -fPIC -pthread)
+    else()
+        list(APPEND APP_PICKER_PLATFORM_WEB_LINK_OPTIONS -sALLOW_MEMORY_GROWTH=1)
+    endif()
+    if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+        list(APPEND APP_PICKER_PLATFORM_WEB_COMPILE_OPTIONS -O0 -g3)
+        list(APPEND APP_PICKER_PLATFORM_WEB_LINK_OPTIONS -O0 -g3 -sSAFE_HEAP=1 -Wno-limited-postlink-optimizations)
+    else ()
+        list(APPEND APP_PICKER_PLATFORM_WEB_COMPILE_OPTIONS -Oz)
+        list(APPEND APP_PICKER_PLATFORM_WEB_LINK_OPTIONS -Oz)
+    endif ()
+
+     add_files_by_extension(APP_PICKER_PLATFORM_WEB_FILES ".h;.hpp;.cpp"
+        platform/web
+        platform/web/renderer
+    )
+    list(APPEND APP_PICKER_FILES ${APP_PICKER_PLATFORM_WEB_FILES})
 endif()
 
 add_source_group(SEAT_CRAFT_COMMON_PUBLIC_HEADERS ${SEAT_CRAFT_ROOT_INCLUDE_DIR} "PublicHeaders")
@@ -63,13 +95,20 @@ add_source_group(APP_PICKER_FILES ${CMAKE_CURRENT_SOURCE_DIR} "Sources")
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0 -g")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0 -g")
 
-add_library(${PROJECT_NAME} SHARED ${SEAT_CRAFT_COMMON_PUBLIC_HEADERS} ${APP_PICKER_PUBLIC_HEADERS} ${APP_PICKER_FILES})
+if(DEFINED EMSCRIPTEN)
+    add_executable(${PROJECT_NAME} ${SEAT_CRAFT_COMMON_PUBLIC_HEADERS} ${APP_PICKER_PUBLIC_HEADERS} ${APP_PICKER_FILES})
+else()
+    add_library(${PROJECT_NAME} SHARED ${SEAT_CRAFT_COMMON_PUBLIC_HEADERS} ${APP_PICKER_PUBLIC_HEADERS} ${APP_PICKER_FILES})
+endif()
+
 target_compile_definitions(${PROJECT_NAME} PRIVATE ${SEAT_CRAFT_APP_PICKER_COMPILE_DEFINITIONS})
 target_include_directories(${PROJECT_NAME} PUBLIC ${SEAT_CRAFT_ROOT_INCLUDE_DIR})
 target_include_directories(${PROJECT_NAME} PRIVATE ${THIRD_PARTY_ROOT_DIR}/tgfx/include)
 target_include_directories(${PROJECT_NAME} PRIVATE .)
 target_link_libraries(${PROJECT_NAME} PRIVATE tgfx)
 target_link_libraries(${PROJECT_NAME} PUBLIC ${SEAT_CRAFT_APP_PICKER_SHARED_LIBS})
+target_compile_options(${PROJECT_NAME} PUBLIC ${APP_PICKER_PLATFORM_WEB_COMPILE_OPTIONS})
+target_link_options(${PROJECT_NAME} PUBLIC ${APP_PICKER_PLATFORM_WEB_LINK_OPTIONS})
 
 if(MACOS OR IOS)
     set_target_properties(${PROJECT_NAME} PROPERTIES
