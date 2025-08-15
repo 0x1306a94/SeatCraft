@@ -7,7 +7,7 @@
     "common": [
       {
         "url": "${PAG_GROUP}/tgfx.git",
-        "commit": "d1e995cccf38c1dc491c6df7e13ba052056bd052",
+        "commit": "88f38f8489feacb9f22c1e9a668b53fa204c160f",
         "dir": "third_party/tgfx"
       }
     ]
