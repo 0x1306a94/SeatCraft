@@ -29,7 +29,7 @@
 
 #include <filesystem>
 
-#define SHOW_MOCK_SEAT 0
+#define SHOW_MOCK_SEAT 1
 
 namespace fs = std::filesystem;
 
@@ -258,7 +258,7 @@ std::shared_ptr<tgfx::Layer> SeatLayerTree::buildLayerTree(tgfx::Canvas *canvas,
         float lineSpacing = 10.0f;
         float itemSpacing = 10.0f;
 #if ANDROID
-        int rows = 10, columns = 10;
+        int rows = 100, columns = 100;
 #else
         int rows = 100, columns = 100;
 #endif

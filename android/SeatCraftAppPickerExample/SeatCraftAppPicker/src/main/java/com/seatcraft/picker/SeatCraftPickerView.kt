@@ -1,10 +1,10 @@
 package com.seatcraft.picker
 
+import android.animation.ValueAnimator
 import android.content.Context
 import android.content.res.AssetManager
 import android.graphics.SurfaceTexture
 import android.util.AttributeSet
-import android.view.Choreographer
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
@@ -12,32 +12,33 @@ import android.view.Surface
 import android.view.TextureView
 
 
-class SeatCraftPickerView : TextureView, TextureView.SurfaceTextureListener, Choreographer.FrameCallback {
+class SeatCraftPickerView : TextureView, TextureView.SurfaceTextureListener {
     private var surface: Surface? = null
     private var nativePtr: Long = 0
     private var areaMapSvgData: ByteArray? = null
     private var areaMapSvgPath: String? = null
     private var isScaling = false
-    private var isDrawing = false // 是否在进行持续绘制
     private lateinit var scaleGestureDetector: ScaleGestureDetector
     private lateinit var gestureDetector: GestureDetector
+    private var continuousAnimator: ValueAnimator? = null
 
     constructor(context: Context) : super(context) {
-        setupNativePtr()
-        setupSurfaceTexture()
-        setupGesture()
+        setup()
     }
 
     constructor(context: Context, attrs: AttributeSet) : super(context, attrs) {
-        setupNativePtr()
-        setupSurfaceTexture()
-        setupGesture()
+        setup()
     }
 
     constructor(context: Context, attrs: AttributeSet, defStyleAttr: Int) : super(context, attrs, defStyleAttr) {
+        setup()
+    }
+
+    private fun setup() {
         setupNativePtr()
         setupSurfaceTexture()
         setupGesture()
+        setupContinuousAnimator()
     }
 
     private fun setupSurfaceTexture() {
@@ -55,20 +56,16 @@ class SeatCraftPickerView : TextureView, TextureView.SurfaceTextureListener, Cho
             object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
                 override fun onScaleBegin(detector: ScaleGestureDetector): Boolean {
                     isScaling = true
-                    stopDrawing()
                     nativeUpdatePinch(detector.scaleFactor, detector.focusX, detector.focusY)
-                    notifyNativeDraw(true)
                     return true
                 }
 
                 override fun onScaleEnd(detector: ScaleGestureDetector) {
                     isScaling = false
-                    startDrawing()
                 }
 
                 override fun onScale(detector: ScaleGestureDetector): Boolean {
                     nativeUpdatePinch(detector.scaleFactor, detector.focusX, detector.focusY)
-                    notifyNativeDraw(true)
                     return true
                 }
             }
@@ -84,24 +81,31 @@ class SeatCraftPickerView : TextureView, TextureView.SurfaceTextureListener, Cho
                     distanceY: Float
                 ): Boolean {
                     if (!isScaling) {
-                        stopDrawing()
                         nativeUpdatePan(-distanceX, -distanceY)
-                        notifyNativeDraw(true)
                     }
                     return true
                 }
 
                 override fun onFling(e1: MotionEvent?, e2: MotionEvent, velocityX: Float, velocityY: Float): Boolean {
-                    startDrawing()
                     return true
                 }
 
                 override fun onSingleTapUp(e: MotionEvent): Boolean {
-                    startDrawing()
                     return !isScaling
                 }
             }
         )
+    }
+
+    private fun setupContinuousAnimator() {
+        continuousAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
+            repeatCount = ValueAnimator.INFINITE
+            addUpdateListener { animation ->
+                notifyNativeDraw(false)
+            }
+            start()
+        }
+
     }
 
     fun setAreaMapSvgData(data: ByteArray?) {
@@ -109,7 +113,6 @@ class SeatCraftPickerView : TextureView, TextureView.SurfaceTextureListener, Cho
         areaMapSvgPath = null
         if (nativeInitialized()) {
             nativeSetAreaMapSvgData(data)
-            nativeDraw(true)
         }
     }
 
@@ -118,8 +121,24 @@ class SeatCraftPickerView : TextureView, TextureView.SurfaceTextureListener, Cho
         areaMapSvgPath = path
         if (nativeInitialized()) {
             nativeSetAreaMapSvgPath(path)
-            nativeDraw(true)
         }
+    }
+
+    fun onPause() {
+        continuousAnimator?.pause()
+    }
+
+    fun onResume() {
+        if (!nativeInitialized()) {
+            setupNativePtr()
+        }
+        continuousAnimator?.resume()
+    }
+
+    fun onDestroy() {
+        continuousAnimator?.cancel()
+        continuousAnimator = null
+        release()
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
@@ -136,8 +155,6 @@ class SeatCraftPickerView : TextureView, TextureView.SurfaceTextureListener, Cho
         surface = Surface(p0)
         nativeUpdateSurface(surface!!, metrics.density)
         nativeUpdateSize()
-        nativeDraw(true)
-        startDrawing()
     }
 
     override fun onSurfaceTextureSizeChanged(p0: SurfaceTexture, p1: Int, p2: Int) {
@@ -151,7 +168,6 @@ class SeatCraftPickerView : TextureView, TextureView.SurfaceTextureListener, Cho
     }
 
     override fun onSurfaceTextureDestroyed(p0: SurfaceTexture): Boolean {
-        stopDrawing()
         val metrics = resources.displayMetrics
         nativeUpdateSurface(null, metrics.density)
         return true
@@ -171,41 +187,6 @@ class SeatCraftPickerView : TextureView, TextureView.SurfaceTextureListener, Cho
         }
     }
 
-    override fun onAttachedToWindow() {
-        super.onAttachedToWindow()
-        if (!nativeInitialized()) {
-            setupNativePtr()
-        }
-    }
-
-    override fun onDetachedFromWindow() {
-        super.onDetachedFromWindow()
-        release()
-    }
-
-    /** 启动持续绘制（直到 stopDrawing 被调用） */
-    private fun startDrawing() {
-        if (!isDrawing) {
-            isDrawing = true
-            Choreographer.getInstance().postFrameCallback(this)
-        }
-    }
-
-    /** 停止持续绘制 */
-    private fun stopDrawing() {
-        if (isDrawing) {
-            isDrawing = false
-            Choreographer.getInstance().removeFrameCallback(this)
-        }
-    }
-
-    /** 每帧回调 */
-    override fun doFrame(frameTimeNanos: Long) {
-        notifyNativeDraw(false);
-        if (isDrawing) {
-            Choreographer.getInstance().postFrameCallback(this)
-        }
-    }
 
     private fun notifyNativeDraw(force: Boolean) {
         if (nativeInitialized()) {

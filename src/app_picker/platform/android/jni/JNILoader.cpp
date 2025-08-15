@@ -145,7 +145,7 @@ JNIEXPORT jlong JNICALL Java_com_seatcraft_picker_SeatCraftPickerView_nativeCrea
     app->setFileReader(std::make_shared<kk::AndroidFileReader>(assetMgr));
 
     kk::SeatStatusSVGPathMap pathMap{
-        {1, "asset://icon_chooseSeat_canSelected.svg"},
+        {1, "asset://svg/icon_chooseSeat_canSelected.svg"},
     };
     app->updateSeatStatusSVGPathMap(pathMap);
 

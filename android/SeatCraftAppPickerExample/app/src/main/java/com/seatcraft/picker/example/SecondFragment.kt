@@ -34,9 +34,19 @@ class SecondFragment : Fragment() {
         binding.pickerView.setAreaMapSvgPath("asset://svg/performbg_2.svg")
     }
 
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _binding = null
+    override fun onPause() {
+        super.onPause()
+        binding.pickerView.onPause()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        binding.pickerView.onResume()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        binding.pickerView.onDestroy()
     }
 
     private fun readAssetFileToByteArray(context: Context, fileName: String): ByteArray? {
