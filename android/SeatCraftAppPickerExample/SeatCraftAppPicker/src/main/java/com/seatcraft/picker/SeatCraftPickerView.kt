@@ -2,19 +2,18 @@ package com.seatcraft.picker
 
 import android.content.Context
 import android.content.res.AssetManager
-import android.graphics.Color
-import android.graphics.PixelFormat
+import android.graphics.SurfaceTexture
 import android.util.AttributeSet
 import android.view.Choreographer
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.view.Surface
-import android.view.SurfaceHolder
-import android.view.SurfaceView
+import android.view.TextureView
 
 
-class SeatCraftPickerView : SurfaceView, SurfaceHolder.Callback, Choreographer.FrameCallback {
+class SeatCraftPickerView : TextureView, TextureView.SurfaceTextureListener, Choreographer.FrameCallback {
+    private var surface: Surface? = null
     private var nativePtr: Long = 0
     private var areaMapSvgData: ByteArray? = null
     private var areaMapSvgPath: String? = null
@@ -25,27 +24,24 @@ class SeatCraftPickerView : SurfaceView, SurfaceHolder.Callback, Choreographer.F
 
     constructor(context: Context) : super(context) {
         setupNativePtr()
-        setupSurfaceHolder()
+        setupSurfaceTexture()
         setupGesture()
     }
 
     constructor(context: Context, attrs: AttributeSet) : super(context, attrs) {
         setupNativePtr()
-        setupSurfaceHolder()
+        setupSurfaceTexture()
         setupGesture()
     }
 
     constructor(context: Context, attrs: AttributeSet, defStyleAttr: Int) : super(context, attrs, defStyleAttr) {
         setupNativePtr()
-        setupSurfaceHolder()
+        setupSurfaceTexture()
         setupGesture()
     }
 
-    private fun setupSurfaceHolder() {
-        holder.addCallback(this)
-        holder.setFormat(PixelFormat.TRANSPARENT)
-        setBackgroundColor(Color.argb(0, 0, 0, 0))
-        setZOrderOnTop(false)
+    private fun setupSurfaceTexture() {
+        surfaceTextureListener = this
     }
 
     private fun setupNativePtr() {
@@ -134,31 +130,41 @@ class SeatCraftPickerView : SurfaceView, SurfaceHolder.Callback, Choreographer.F
         return true
     }
 
-    override fun surfaceCreated(holder: SurfaceHolder) {
+
+    override fun onSurfaceTextureAvailable(p0: SurfaceTexture, p1: Int, p2: Int) {
         val metrics = resources.displayMetrics
-        nativeUpdateSurface(holder.surface, metrics.density)
+        surface = Surface(p0)
+        nativeUpdateSurface(surface!!, metrics.density)
         nativeUpdateSize()
         nativeDraw(true)
         startDrawing()
     }
 
-    override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
-        if (nativeInitialized()) {
-            nativeUpdateSize()
+    override fun onSurfaceTextureSizeChanged(p0: SurfaceTexture, p1: Int, p2: Int) {
+        if (!nativeInitialized()) {
+            return
         }
+        nativeUpdateSize()
     }
 
-    override fun surfaceDestroyed(holder: SurfaceHolder) {
+    override fun onSurfaceTextureUpdated(p0: SurfaceTexture) {
+    }
+
+    override fun onSurfaceTextureDestroyed(p0: SurfaceTexture): Boolean {
         stopDrawing()
         val metrics = resources.displayMetrics
         nativeUpdateSurface(null, metrics.density)
+        return true
     }
+
 
     private fun nativeInitialized(): Boolean {
         return nativePtr != 0L
     }
 
     private fun release() {
+        surface?.release()
+        surface = null
         if (nativeInitialized()) {
             nativeRelease()
             nativePtr = 0L
