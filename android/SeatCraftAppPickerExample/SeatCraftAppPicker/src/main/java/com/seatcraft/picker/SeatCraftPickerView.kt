@@ -2,17 +2,19 @@ package com.seatcraft.picker
 
 import android.content.Context
 import android.content.res.AssetManager
+import android.graphics.Color
+import android.graphics.PixelFormat
 import android.util.AttributeSet
+import android.view.Choreographer
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.view.Surface
 import android.view.SurfaceHolder
 import android.view.SurfaceView
-import android.view.Choreographer
+
 
 class SeatCraftPickerView : SurfaceView, SurfaceHolder.Callback, Choreographer.FrameCallback {
-    private var surface: Surface? = null
     private var nativePtr: Long = 0
     private var areaMapSvgData: ByteArray? = null
     private var areaMapSvgPath: String? = null
@@ -41,6 +43,8 @@ class SeatCraftPickerView : SurfaceView, SurfaceHolder.Callback, Choreographer.F
 
     private fun setupSurfaceHolder() {
         holder.addCallback(this)
+        holder.setFormat(PixelFormat.TRANSPARENT)
+        setBackgroundColor(Color.argb(0, 0, 0, 0))
         setZOrderOnTop(false)
     }
 
@@ -132,8 +136,7 @@ class SeatCraftPickerView : SurfaceView, SurfaceHolder.Callback, Choreographer.F
 
     override fun surfaceCreated(holder: SurfaceHolder) {
         val metrics = resources.displayMetrics
-        surface = holder.surface
-        nativeUpdateSurface(surface!!, metrics.density)
+        nativeUpdateSurface(holder.surface, metrics.density)
         nativeUpdateSize()
         nativeDraw(true)
         startDrawing()
@@ -156,11 +159,9 @@ class SeatCraftPickerView : SurfaceView, SurfaceHolder.Callback, Choreographer.F
     }
 
     private fun release() {
-        surface?.release()
-        surface = null
         if (nativeInitialized()) {
             nativeRelease()
-            nativePtr = 0
+            nativePtr = 0L
         }
     }
 
