@@ -24,6 +24,7 @@ struct SeatCraftViewCoreWrapper {
         : viewCore(std::move(viewCore)) {}
 };
 };  // namespace kk::jni
+
 static jfieldID SeatCraftPickerView_nativePtr;
 static std::shared_ptr<kk::ui::SeatCraftViewCore> GetSeatCraftViewCore(JNIEnv *env, jobject thiz) {
     jlong ptr = env->GetLongField(thiz, SeatCraftPickerView_nativePtr);
@@ -86,8 +87,13 @@ JNIEXPORT void JNICALL Java_com_seatcraft_picker_SeatCraftPickerView_nativeSetAr
     auto app = handler->getApp();
     auto provider = app->getSvgDataProvider();
     if (areaSvgData == nullptr) {
-        provider->setAreaSVGData(nullptr);
-        handler->updateAreaAvailable();
+        auto viewCore = handler->shared_from_this();
+        viewCore->postWork([viewCore, provider] {
+            provider->setAreaSVGData(nullptr);
+            viewCore->postUI([=] {
+                viewCore->updateAreaAvailable();
+            });
+        });
         return;
     }
 
@@ -95,8 +101,14 @@ JNIEXPORT void JNICALL Java_com_seatcraft_picker_SeatCraftPickerView_nativeSetAr
     auto size = static_cast<size_t>(env->GetArrayLength(areaSvgData));
     auto data = tgfx::Data::MakeWithCopy(bytes, size);
     env->ReleaseByteArrayElements(areaSvgData, bytes, 0);
-    provider->setAreaSVGData(std::move(data));
-    handler->updateAreaAvailable();
+
+    auto viewCore = handler->shared_from_this();
+    viewCore->postWork([viewCore, provider, data = std::move(data)] {
+        provider->setAreaSVGData(data);
+        viewCore->postUI([=] {
+            viewCore->updateAreaAvailable();
+        });
+    });
 }
 
 JNIEXPORT void JNICALL Java_com_seatcraft_picker_SeatCraftPickerView_nativeSetAreaMapSvgPath(JNIEnv *env, jobject thiz, jstring areaSvgPath) {
@@ -111,23 +123,40 @@ JNIEXPORT void JNICALL Java_com_seatcraft_picker_SeatCraftPickerView_nativeSetAr
     }
 
     auto provider = app->getSvgDataProvider();
+    const char *cStr = nullptr;
     if (areaSvgPath == nullptr) {
-        provider->setAreaSVGData(nullptr);
-        handler->updateAreaAvailable();
+        goto FAILURE;
         return;
     }
 
-    const char *cStr = env->GetStringUTFChars(areaSvgPath, nullptr);
-    if (cStr == nullptr) {
-        provider->setAreaSVGData(nullptr);
-        handler->updateAreaAvailable();
+    cStr = env->GetStringUTFChars(areaSvgPath, nullptr);
+    if (cStr) {
+        goto SUCCESS;
         return;
     }
 
+FAILURE: {
+    auto viewCore = handler->shared_from_this();
+    viewCore->postWork([viewCore, provider] {
+        provider->setAreaSVGData(nullptr);
+        viewCore->postUI([viewCore] {
+            viewCore->updateAreaAvailable();
+        });
+    });
+    return;
+}
+
+SUCCESS:
     auto data = fileReader->readData(cStr);
     env->ReleaseStringUTFChars(areaSvgPath, cStr);
-    provider->setAreaSVGData(std::move(data));
-    handler->updateAreaAvailable();
+
+    auto viewCore = handler->shared_from_this();
+    viewCore->postWork([viewCore, provider, data = std::move(data)] {
+        provider->setAreaSVGData(data);
+        viewCore->postUI([viewCore] {
+            viewCore->updateAreaAvailable();
+        });
+    });
 }
 
 JNIEXPORT void JNICALL Java_com_seatcraft_picker_SeatCraftPickerView_nativeUpdateSurface(JNIEnv *env, jobject thiz, jobject surface, jfloat density) {
