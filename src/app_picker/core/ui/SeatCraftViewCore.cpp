@@ -80,7 +80,9 @@ void SeatCraftViewCore::updateAreaAvailable() {
     updateSvgScale();
     updateContentSize();
 }
+
 void SeatCraftViewCore::updateSeatStatusAvailable() {
+    _renderer->invalidateSeatStatusImage();
     _renderer->invalidateContent();
 }
 

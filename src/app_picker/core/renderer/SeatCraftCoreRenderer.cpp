@@ -64,6 +64,10 @@ bool SeatCraftCoreRenderer::updateSize() {
     return sizeChanged;
 }
 
+void SeatCraftCoreRenderer::invalidateSeatStatusImage() {
+    _seatLayer->invalidateSeatStatusImage();
+}
+
 void SeatCraftCoreRenderer::invalidateContent() {
     _invalidate = true;
 }

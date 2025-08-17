@@ -30,7 +30,11 @@ class SeatCraftPickerView : TextureView, TextureView.SurfaceTextureListener {
         setup()
     }
 
-    constructor(context: Context, attrs: AttributeSet, defStyleAttr: Int) : super(context, attrs, defStyleAttr) {
+    constructor(context: Context, attrs: AttributeSet, defStyleAttr: Int) : super(
+        context,
+        attrs,
+        defStyleAttr
+    ) {
         setup()
     }
 
@@ -86,7 +90,12 @@ class SeatCraftPickerView : TextureView, TextureView.SurfaceTextureListener {
                     return true
                 }
 
-                override fun onFling(e1: MotionEvent?, e2: MotionEvent, velocityX: Float, velocityY: Float): Boolean {
+                override fun onFling(
+                    e1: MotionEvent?,
+                    e2: MotionEvent,
+                    velocityX: Float,
+                    velocityY: Float
+                ): Boolean {
                     return true
                 }
 
@@ -121,6 +130,12 @@ class SeatCraftPickerView : TextureView, TextureView.SurfaceTextureListener {
         areaMapSvgPath = path
         if (nativeInitialized()) {
             nativeSetAreaMapSvgPath(path)
+        }
+    }
+
+    fun setSeatStatusSVGData(dataMap: HashMap<Int, ByteArray>?) {
+        if (nativeInitialized()) {
+            nativeSetSeatStatusSVGData(dataMap)
         }
     }
 
@@ -196,6 +211,7 @@ class SeatCraftPickerView : TextureView, TextureView.SurfaceTextureListener {
 
     private external fun nativeSetAreaMapSvgData(data: ByteArray?)
     private external fun nativeSetAreaMapSvgPath(path: String?)
+    private external fun nativeSetSeatStatusSVGData(dataMap: HashMap<Int, ByteArray>?)
     private external fun nativeUpdateSize()
     private external fun nativeUpdatePan(x: Float, y: Float)
     private external fun nativeUpdatePinch(scale: Float, cx: Float, cy: Float)

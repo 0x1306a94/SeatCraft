@@ -28,6 +28,7 @@ class SeatLayerTree : public kk::drawers::Drawer {
     explicit SeatLayerTree();
 
     virtual ~SeatLayerTree();
+    void invalidateSeatStatusImage();
     bool hasContentChanged() const;
     virtual void prepare(tgfx::Canvas *canvas, const kk::SeatCraftCoreApp *app, bool force) override;
 

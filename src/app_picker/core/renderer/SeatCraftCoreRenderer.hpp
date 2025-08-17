@@ -36,6 +36,8 @@ class SeatCraftCoreRenderer {
 
     bool updateSize();
 
+    void invalidateSeatStatusImage();
+
     void invalidateContent();
 
     void draw(bool force = false);

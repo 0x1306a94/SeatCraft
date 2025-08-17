@@ -7,6 +7,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import com.seatcraft.picker.example.databinding.FragmentSecondBinding
+import kotlin.concurrent.thread
 
 /**
  * A simple [Fragment] subclass as the second destination in the navigation.
@@ -32,6 +33,11 @@ class SecondFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         binding.pickerView.setAreaMapSvgPath("asset://svg/performbg_2.svg")
+
+        val data = readAssetFileToByteArray(requireContext(), "svg/icon_chooseSeat_canSelected.svg")
+            ?: return
+        val dataMap = hashMapOf(1 to data)
+        binding.pickerView.setSeatStatusSVGData(dataMap)
     }
 
     override fun onPause() {

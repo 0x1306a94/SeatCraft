@@ -159,6 +159,82 @@ SUCCESS:
     });
 }
 
+JNIEXPORT void JNICALL Java_com_seatcraft_picker_SeatCraftPickerView_nativeSetSeatStatusSVGData(JNIEnv *env, jobject thiz, jobject jdataMap) {
+    auto handler = GetSeatCraftViewCore(env, thiz);
+    if (handler == nullptr) {
+        return;
+    }
+    auto app = handler->getApp();
+    auto provider = app->getSvgDataProvider();
+
+    if (jdataMap == nullptr) {
+        auto viewCore = handler->shared_from_this();
+        viewCore->postWork([viewCore, provider] {
+            provider->setSeatStatusSVGData(kk::SeatStatusSVGDataMap{});
+            viewCore->postUI([viewCore] {
+                viewCore->updateSeatStatusAvailable();
+            });
+        });
+        return;
+    }
+
+    kk::SeatStatusSVGDataMap dataMapCpp;
+
+    jclass mapClass = env->FindClass("java/util/Map");
+    jmethodID entrySetMethod = env->GetMethodID(mapClass, "entrySet", "()Ljava/util/Set;");
+
+    jclass setClass = env->FindClass("java/util/Set");
+    jmethodID iteratorMethod = env->GetMethodID(setClass, "iterator", "()Ljava/util/Iterator;");
+
+    jclass iteratorClass = env->FindClass("java/util/Iterator");
+    jmethodID hasNextMethod = env->GetMethodID(iteratorClass, "hasNext", "()Z");
+    jmethodID nextMethod = env->GetMethodID(iteratorClass, "next", "()Ljava/lang/Object;");
+
+    jclass entryClass = env->FindClass("java/util/Map$Entry");
+    jmethodID getKeyMethod = env->GetMethodID(entryClass, "getKey", "()Ljava/lang/Object;");
+    jmethodID getValueMethod = env->GetMethodID(entryClass, "getValue", "()Ljava/lang/Object;");
+
+    jclass integerClass = env->FindClass("java/lang/Integer");
+    jmethodID intValueMethod = env->GetMethodID(integerClass, "intValue", "()I");
+
+    jobject entrySet = env->CallObjectMethod(jdataMap, entrySetMethod);
+    jobject iterator = env->CallObjectMethod(entrySet, iteratorMethod);
+
+    while (env->CallBooleanMethod(iterator, hasNextMethod)) {
+        jobject entry = env->CallObjectMethod(iterator, nextMethod);
+
+        jobject jKey = env->CallObjectMethod(entry, getKeyMethod);
+        auto key = static_cast<kk::SeatStatusKey>(env->CallIntMethod(jKey, intValueMethod));
+
+        auto jValue = (jbyteArray)env->CallObjectMethod(entry, getValueMethod);
+
+        jbyte *bytes = env->GetByteArrayElements(jValue, nullptr);
+        jsize len = env->GetArrayLength(jValue);
+
+        auto data = tgfx::Data::MakeWithCopy(bytes, static_cast<size_t>(len));
+
+        env->ReleaseByteArrayElements(jValue, bytes, JNI_ABORT);
+        if (data) {
+            dataMapCpp[key] = std::move(data);
+        }
+
+        env->DeleteLocalRef(entry);
+        env->DeleteLocalRef(jKey);
+        env->DeleteLocalRef(jValue);
+    }
+
+    env->DeleteLocalRef(entrySet);
+    env->DeleteLocalRef(iterator);
+
+    auto viewCore = handler->shared_from_this();
+    viewCore->postWork([viewCore, provider, dataMap = std::move(dataMapCpp)] {
+        provider->setSeatStatusSVGData(dataMap);
+        viewCore->postUI([viewCore] {
+            viewCore->updateSeatStatusAvailable();
+        });
+    });
+}
+
 JNIEXPORT void JNICALL Java_com_seatcraft_picker_SeatCraftPickerView_nativeUpdateSurface(JNIEnv *env, jobject thiz, jobject surface, jfloat density) {
     UNUSED_PARAM(env);
     UNUSED_PARAM(thiz);
@@ -208,11 +284,6 @@ JNIEXPORT jlong JNICALL Java_com_seatcraft_picker_SeatCraftPickerView_nativeCrea
 
     auto app = std::make_shared<kk::SeatCraftCoreApp>(tgfx::Size::MakeEmpty(), tgfx::Size::MakeEmpty(), density);
     app->setFileReader(std::make_shared<kk::AndroidFileReader>(assetMgr));
-
-    //    kk::SeatStatusSVGPathMap pathMap{
-    //        {1, "asset://svg/icon_chooseSeat_canSelected.svg"},
-    //    };
-    //    app->updateSeatStatusSVGPathMap(pathMap);
 
     auto zoomPanController = std::make_unique<kk::ui::ElasticZoomPanController>();
     auto uiScheduler = std::make_shared<kk::thread::AndroidUIThreadScheduler>();

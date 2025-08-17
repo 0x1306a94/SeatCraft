@@ -48,6 +48,10 @@ SeatLayerTree::~SeatLayerTree() {
     tgfx::PrintLog("%s", __PRETTY_FUNCTION__);
 }
 
+void SeatLayerTree::invalidateSeatStatusImage() {
+    _seatStatusImageMap.clear();
+}
+
 bool SeatLayerTree::hasContentChanged() const {
     if (_root == nullptr) {
         return true;
@@ -98,12 +102,6 @@ bool SeatLayerTree::updateContentSize(const kk::SeatCraftCoreApp *app) {
 
 bool SeatLayerTree::prebuildSeatStatusImage(tgfx::Canvas *canvas, const kk::SeatCraftCoreApp *app) {
     if (!_seatStatusImageMap.empty()) {
-        return false;
-    }
-
-    auto fileReader = app->getFileReader();
-
-    if (fileReader == nullptr) {
         return false;
     }
 
