@@ -10,6 +10,7 @@
 #include "core/FileReader.h"
 #include "core/SeatCraftCoreApp.hpp"
 #include "core/svg/ConvertSVGLayer.hpp"
+#include "core/svg/SVGDataProvider.h"
 #include "core/svg/SVGLoader.hpp"
 
 #include <SeatCraft/common/common_macro.h>
@@ -106,11 +107,12 @@ bool SeatLayerTree::prebuildSeatStatusImage(tgfx::Canvas *canvas, const kk::Seat
         return false;
     }
 
-    const auto &seatStatusSvgMap = app->getSeatStatusSvgMap();
-    if (seatStatusSvgMap.empty()) {
+    auto dataProvider = app->getSvgDataProvider();
+    auto seatStatusDOMs = dataProvider->seatStatusDOMs();
+    if (seatStatusDOMs.empty()) {
         return false;
     }
-    auto statusSize = seatStatusSvgMap.size();
+    auto statusSize = seatStatusDOMs.size();
     auto columns = 4;
     auto rows = static_cast<int>(std::ceil(static_cast<float>(statusSize) / static_cast<float>(columns)));
     int lineSpacing = 10;
@@ -128,28 +130,15 @@ bool SeatLayerTree::prebuildSeatStatusImage(tgfx::Canvas *canvas, const kk::Seat
     tempCanvas->clear();
     std::unordered_map<kk::SeatStatusKey, tgfx::Rect> rectsMap{};
     auto startX = static_cast<float>(itemSpacing), startY = static_cast<float>(lineSpacing);
-    for (const auto &[key, value] : seatStatusSvgMap) {
-        auto data = fileReader->readData(value);
-        if (data == nullptr) {
-            continue;
-        }
-        auto stream = tgfx::Stream::MakeFromData(data);
-        if (stream == nullptr) {
-            continue;
-        }
-        auto seatSvgDom = kk::svg::loadSvgDom(stream.get());
-        if (seatSvgDom == nullptr) {
-            continue;
-        }
-
-        auto domSize = seatSvgDom->getContainerSize();
+    for (const auto &[key, value] : seatStatusDOMs) {
+        auto domSize = value->getContainerSize();
         auto scale = static_cast<float>(itemWidth) / domSize.width;
         auto matrix = tgfx::Matrix::MakeScale(scale);
         matrix.postTranslate(startX, startY);
 
         tempCanvas->save();
         tempCanvas->concat(matrix);
-        seatSvgDom->render(tempCanvas);
+        value->render(tempCanvas);
         tempCanvas->restore();
 
         rectsMap.emplace(key, tgfx::Rect::MakeXYWH(startX, startY, static_cast<float>(itemWidth), static_cast<float>(itemHeight)));

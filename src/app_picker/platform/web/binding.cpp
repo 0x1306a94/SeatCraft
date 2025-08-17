@@ -3,9 +3,11 @@
 
 #include "core/SeatCraftCoreApp.hpp"
 #include "core/renderer/SeatCraftCoreRenderer.hpp"
+#include "core/svg/SVGDataProvider.h"
 #include "core/ui/ElasticZoomPanController.hpp"
 #include "core/ui/SeatCraftViewCore.hpp"
 #include "platform/web/renderer/WebRendererBackend.h"
+#include "thread/WebUIThreadScheduler.h"
 
 #include <tgfx/core/Data.h>
 #include <tgfx/core/Stream.h>
@@ -42,17 +44,16 @@ EMSCRIPTEN_BINDINGS(SeatCraftAppPicker) {
         auto app = std::make_shared<kk::SeatCraftCoreApp>(tgfx::Size::MakeEmpty(), tgfx::Size::MakeEmpty(), density);
         auto backend = std::make_unique<kk::renderer::WebRendererBackend>(canvasID, density);
         auto zoomPanController = std::make_unique<kk::ui::ElasticZoomPanController>();
-        return std::make_shared<kk::ui::SeatCraftViewCore>(app, std::move(backend), std::move(zoomPanController));
+        auto uiScheduler = std::make_shared<kk::thread::WebUIThreadScheduler>();
+        return std::make_shared<kk::ui::SeatCraftViewCore>(app, std::move(backend), std::move(zoomPanController), std::move(uiScheduler));
     });
 
     auto updateAreaSvgData = optional_override([](kk::ui::SeatCraftViewCore &viewCore, const val &emscriptenData) {
+        auto app = viewCore.getApp();
+        auto provider = app->getSvgDataProvider();
         auto data = GetDataFromEmscripten(emscriptenData);
-        if (data) {
-            auto stream = tgfx::Stream::MakeFromData(std::move(data));
-            viewCore.updateAreaSvgData(std::move(stream));
-        } else {
-            viewCore.updateAreaSvgData(nullptr);
-        }
+        provider->setAreaSVGData(std::move(data));
+        viewCore.updateAreaAvailable();
     });
 
     auto handlePan = optional_override([](kk::ui::SeatCraftViewCore &viewCore, float deltaX, float deltaY) {

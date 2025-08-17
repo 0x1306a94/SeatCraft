@@ -14,7 +14,7 @@
 @end
 
 @implementation KKSeatCraftCoreSeatStatusSvgPathMap {
-    kk::SeatStatusSVGPathMap _pathMap;
+    std::unordered_map<kk::SeatStatusKey, std::string> _pathMap;
 }
 
 - (void)dealloc {
@@ -36,7 +36,7 @@
     _pathMap.erase(key);
 }
 
-- (kk::SeatStatusSVGPathMap)getMap {
+- (std::unordered_map<kk::SeatStatusKey, std::string>)getMap {
     return _pathMap;
 }
 @end

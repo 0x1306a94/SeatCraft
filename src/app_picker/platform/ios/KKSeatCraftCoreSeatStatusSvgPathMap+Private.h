@@ -13,7 +13,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface KKSeatCraftCoreSeatStatusSvgPathMap ()
 
-- (kk::SeatStatusSVGPathMap)getMap;
+- (std::unordered_map<kk::SeatStatusKey, std::string>)getMap;
 @end
 
 NS_ASSUME_NONNULL_END

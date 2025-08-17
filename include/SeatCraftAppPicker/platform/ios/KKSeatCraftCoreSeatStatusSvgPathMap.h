@@ -7,11 +7,11 @@
 
 #import <Foundation/Foundation.h>
 
+#import <SeatCraftAppPicker/KKSeatCraftCoreSeatStatusKey.h>
 #import <SeatCraftAppPicker/defines.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
-typedef uint8_t KKSeatCraftCoreSeatStatusKey;
 SEAT_CRAFT_API @interface KKSeatCraftCoreSeatStatusSvgPathMap : NSObject
 - (void)add:(KKSeatCraftCoreSeatStatusKey)key path:(NSString *)path;
 - (void)remove:(KKSeatCraftCoreSeatStatusKey)key;

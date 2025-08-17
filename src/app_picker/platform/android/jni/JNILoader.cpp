@@ -11,17 +11,37 @@
 #include "AndroidFileReader.h"
 #include "core/SeatCraftCoreApp.hpp"
 #include "core/renderer/SeatCraftCoreRenderer.hpp"
+#include "core/svg/SVGDataProvider.h"
 #include "core/ui/ElasticZoomPanController.hpp"
 #include "core/ui/SeatCraftViewCore.hpp"
 #include "platform/android/renderer/AndroidRendererBackend.h"
+#include "platform/android/thread/AndroidUIThreadScheduler.h"
 
+namespace kk::jni {
+struct SeatCraftViewCoreWrapper {
+    std::shared_ptr<kk::ui::SeatCraftViewCore> viewCore;
+    explicit SeatCraftViewCoreWrapper(std::shared_ptr<kk::ui::SeatCraftViewCore> viewCore)
+        : viewCore(std::move(viewCore)) {}
+};
+};  // namespace kk::jni
 static jfieldID SeatCraftPickerView_nativePtr;
-static kk::ui::SeatCraftViewCore *GetSeatCraftViewCore(JNIEnv *env, jobject thiz) {
+static std::shared_ptr<kk::ui::SeatCraftViewCore> GetSeatCraftViewCore(JNIEnv *env, jobject thiz) {
     jlong ptr = env->GetLongField(thiz, SeatCraftPickerView_nativePtr);
     if (ptr == 0) {
         return nullptr;
     }
-    return reinterpret_cast<kk::ui::SeatCraftViewCore *>(ptr);
+    auto wrapper = reinterpret_cast<kk::jni::SeatCraftViewCoreWrapper *>(ptr);
+    return wrapper->viewCore;
+}
+
+static void DeleteSeatCraftViewCore(JNIEnv *env, jobject thiz) {
+    jlong ptr = env->GetLongField(thiz, SeatCraftPickerView_nativePtr);
+    if (ptr == 0) {
+        return;
+    }
+    auto wrapper = reinterpret_cast<kk::jni::SeatCraftViewCoreWrapper *>(ptr);
+    delete wrapper;
+    env->SetLongField(thiz, SeatCraftPickerView_nativePtr, 0L);
 }
 
 extern "C" {
@@ -62,17 +82,21 @@ JNIEXPORT void JNICALL Java_com_seatcraft_picker_SeatCraftPickerView_nativeSetAr
     if (handler == nullptr) {
         return;
     }
+
+    auto app = handler->getApp();
+    auto provider = app->getSvgDataProvider();
     if (areaSvgData == nullptr) {
-        handler->updateAreaSvgData(nullptr);
+        provider->setAreaSVGData(nullptr);
+        handler->updateAreaAvailable();
         return;
     }
 
     auto bytes = env->GetByteArrayElements(areaSvgData, nullptr);
     auto size = static_cast<size_t>(env->GetArrayLength(areaSvgData));
     auto data = tgfx::Data::MakeWithCopy(bytes, size);
-    auto stream = tgfx::Stream::MakeFromData(std::move(data));
     env->ReleaseByteArrayElements(areaSvgData, bytes, 0);
-    handler->updateAreaSvgData(std::move(stream));
+    provider->setAreaSVGData(std::move(data));
+    handler->updateAreaAvailable();
 }
 
 JNIEXPORT void JNICALL Java_com_seatcraft_picker_SeatCraftPickerView_nativeSetAreaMapSvgPath(JNIEnv *env, jobject thiz, jstring areaSvgPath) {
@@ -80,18 +104,30 @@ JNIEXPORT void JNICALL Java_com_seatcraft_picker_SeatCraftPickerView_nativeSetAr
     if (handler == nullptr) {
         return;
     }
+    auto app = handler->getApp();
+    auto fileReader = app->getFileReader();
+    if (!fileReader) {
+        return;
+    }
+
+    auto provider = app->getSvgDataProvider();
     if (areaSvgPath == nullptr) {
-        handler->updateAreaSvgPath("");
+        provider->setAreaSVGData(nullptr);
+        handler->updateAreaAvailable();
         return;
     }
 
     const char *cStr = env->GetStringUTFChars(areaSvgPath, nullptr);
     if (cStr == nullptr) {
-        handler->updateAreaSvgPath("");
+        provider->setAreaSVGData(nullptr);
+        handler->updateAreaAvailable();
         return;
     }
-    handler->updateAreaSvgPath(cStr);
+
+    auto data = fileReader->readData(cStr);
     env->ReleaseStringUTFChars(areaSvgPath, cStr);
+    provider->setAreaSVGData(std::move(data));
+    handler->updateAreaAvailable();
 }
 
 JNIEXPORT void JNICALL Java_com_seatcraft_picker_SeatCraftPickerView_nativeUpdateSurface(JNIEnv *env, jobject thiz, jobject surface, jfloat density) {
@@ -144,26 +180,23 @@ JNIEXPORT jlong JNICALL Java_com_seatcraft_picker_SeatCraftPickerView_nativeCrea
     auto app = std::make_shared<kk::SeatCraftCoreApp>(tgfx::Size::MakeEmpty(), tgfx::Size::MakeEmpty(), density);
     app->setFileReader(std::make_shared<kk::AndroidFileReader>(assetMgr));
 
-    kk::SeatStatusSVGPathMap pathMap{
-        {1, "asset://svg/icon_chooseSeat_canSelected.svg"},
-    };
-    app->updateSeatStatusSVGPathMap(pathMap);
+    //    kk::SeatStatusSVGPathMap pathMap{
+    //        {1, "asset://svg/icon_chooseSeat_canSelected.svg"},
+    //    };
+    //    app->updateSeatStatusSVGPathMap(pathMap);
 
     auto zoomPanController = std::make_unique<kk::ui::ElasticZoomPanController>();
-    auto handler = new kk::ui::SeatCraftViewCore(app, nullptr, std::move(zoomPanController));
-    auto ptr = reinterpret_cast<jlong>(handler);
+    auto uiScheduler = std::make_shared<kk::thread::AndroidUIThreadScheduler>();
+    auto viewCore = std::make_shared<kk::ui::SeatCraftViewCore>(app, nullptr, std::move(zoomPanController), std::move(uiScheduler));
+    auto wrapper = new kk::jni::SeatCraftViewCoreWrapper(std::move(viewCore));
+    auto ptr = reinterpret_cast<jlong>(wrapper);
     return ptr;
 }
 
 JNIEXPORT void JNICALL Java_com_seatcraft_picker_SeatCraftPickerView_nativeRelease(JNIEnv *env, jobject thiz) {
     UNUSED_PARAM(env);
     UNUSED_PARAM(thiz);
-    auto handler = GetSeatCraftViewCore(env, thiz);
-    if (handler == nullptr) {
-        return;
-    }
-    delete handler;
-    env->SetLongField(thiz, SeatCraftPickerView_nativePtr, 0L);
+    DeleteSeatCraftViewCore(env, thiz);
 }
 
 JNIEXPORT void JNICALL Java_com_seatcraft_picker_SeatCraftPickerView_00024Companion_nativeInit(JNIEnv *env, jobject thiz) {

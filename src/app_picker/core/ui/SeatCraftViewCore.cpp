@@ -12,6 +12,8 @@
 #include "core/SeatCraftCoreApp.hpp"
 #include "core/renderer/RendererBackend.hpp"
 #include "core/renderer/SeatCraftCoreRenderer.hpp"
+#include "core/thread/UIThreadScheduler.h"
+#include "core/thread/WorkThread.h"
 #include "core/ui/ElasticZoomPanController.hpp"
 
 #include <tgfx/core/Stream.h>
@@ -20,10 +22,13 @@
 namespace kk::ui {
 SeatCraftViewCore::SeatCraftViewCore(std::shared_ptr<kk::SeatCraftCoreApp> app,
                                      std::unique_ptr<kk::renderer::RendererBackend> backend,
-                                     std::unique_ptr<kk::ui::ElasticZoomPanController> zoomPanController)
+                                     std::unique_ptr<kk::ui::ElasticZoomPanController> zoomPanController,
+                                     std::shared_ptr<kk::thread::UIThreadScheduler> uiScheduler)
     : _app(app)
     , _renderer(std::make_unique<kk::renderer::SeatCraftCoreRenderer>(app, std::move(backend)))
-    , _zoomPanController(std::move(zoomPanController)) {
+    , _zoomPanController(std::move(zoomPanController))
+    , _uiScheduler(std::move(uiScheduler)) {
+    _workThread = std::make_unique<kk::thread::WorkThread>();
     tgfx::PrintLog("SeatCraftViewCore::SeatCraftViewCore()");
 }
 
@@ -71,16 +76,12 @@ void SeatCraftViewCore::draw(bool force) {
     _renderer->draw(force);
 }
 
-void SeatCraftViewCore::updateAreaSvgData(std::unique_ptr<tgfx::Stream> data) {
-    _app->updateAreaSvgData(std::move(data));
+void SeatCraftViewCore::updateAreaAvailable() {
     updateSvgScale();
     updateContentSize();
 }
-
-void SeatCraftViewCore::updateAreaSvgPath(const std::string &path) {
-    _app->updateAreaSvgPath(path);
-    updateSvgScale();
-    updateContentSize();
+void SeatCraftViewCore::updateSeatStatusAvailable() {
+    _renderer->invalidateContent();
 }
 
 // 手势处理方法，由平台层调用
@@ -120,9 +121,14 @@ void SeatCraftViewCore::setContentOffset(const tgfx::Point &contentOffset) {
     updateZoomPanControllerState();
 }
 
-void SeatCraftViewCore::updateSeatStatusSVGPathMap(kk::SeatStatusSVGPathMap map) {
-    _app->updateSeatStatusSVGPathMap(std::move(map));
-    _renderer->invalidateContent();
+void SeatCraftViewCore::postWork(std::function<void()> task) {
+    _workThread->post(std::move(task));
+}
+
+void SeatCraftViewCore::postUI(std::function<void()> task) {
+    if (_uiScheduler) {
+        _uiScheduler->schedule(std::move(task));
+    }
 }
 
 void SeatCraftViewCore::updateSvgScale() {

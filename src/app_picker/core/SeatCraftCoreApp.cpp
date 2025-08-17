@@ -8,6 +8,7 @@
 #include "SeatCraftCoreApp.hpp"
 
 #include "FileReader.h"
+#include "svg/SVGDataProvider.h"
 #include "svg/SVGLoader.hpp"
 
 #include <tgfx/core/Stream.h>
@@ -19,6 +20,7 @@ SeatCraftCoreApp::SeatCraftCoreApp(const tgfx::Size &boundSize, const tgfx::Size
     : _boundSize(boundSize)
     , _contentSize(contentSize)
     , _density(density)
+    , _svgDataProvider(std::make_shared<kk::svg::SVGDataProvider>())
     , _fileReader(std::make_shared<kk::FileReader>()) {
     tgfx::PrintLog("%s", __PRETTY_FUNCTION__);
 }
@@ -45,8 +47,9 @@ tgfx::Size SeatCraftCoreApp::getContentSize() const {
 
 tgfx::Size SeatCraftCoreApp::getOriginSize() const {
     tgfx::Size size{};
-    if (_svgDom) {
-        size = _svgDom->getContainerSize();
+    auto svgDom = _svgDataProvider->getAreaSVGDOM();
+    if (svgDom) {
+        size = svgDom->getContainerSize();
     }
     return size;
 }
@@ -66,15 +69,12 @@ const tgfx::Point &SeatCraftCoreApp::contentOffset() const {
 }
 
 std::shared_ptr<tgfx::SVGDOM> SeatCraftCoreApp::getSvgDom() const {
-    return _svgDom;
+    auto svgDom = _svgDataProvider->getAreaSVGDOM();
+    return svgDom;
 }
 
-std::string SeatCraftCoreApp::getAreaSvgPath() const {
-    return _areaSvgPath;
-}
-
-const kk::SeatStatusSVGPathMap &SeatCraftCoreApp::getSeatStatusSvgMap() const {
-    return _seatStatusSvgMap;
+std::shared_ptr<kk::svg::SVGDataProvider> SeatCraftCoreApp::getSvgDataProvider() const {
+    return _svgDataProvider;
 }
 
 bool SeatCraftCoreApp::updateContentSize(const tgfx::Size &contentSize) {
@@ -113,46 +113,6 @@ bool SeatCraftCoreApp::updateZoomAndOffset(float zoomScale, const tgfx::Point &c
     }
     _zoomScale = zoomScale;
     _contentOffset = contentOffset;
-    return true;
-}
-
-bool SeatCraftCoreApp::updateAreaSvgPath(const std::string &path) {
-    if (_areaSvgPath == path || _fileReader == nullptr) {
-        return false;
-    }
-
-    auto data = _fileReader->readData(path);
-    if (data == nullptr) {
-        _svgDom = nullptr;
-        return false;
-    }
-    auto stream = tgfx::Stream::MakeFromData(data);
-    if (stream == nullptr) {
-        _svgDom = nullptr;
-        return false;
-    }
-
-    _areaSvgPath = path;
-    _svgDom = kk::svg::loadSvgDom(stream.get());
-    return true;
-}
-
-bool SeatCraftCoreApp::updateAreaSvgData(std::unique_ptr<tgfx::Stream> data) {
-    if (data == nullptr) {
-        _svgDom = nullptr;
-        return true;
-    }
-
-    _svgDom = kk::svg::loadSvgDom(data.get());
-    return true;
-}
-
-bool SeatCraftCoreApp::updateSeatStatusSVGPathMap(SeatStatusSVGPathMap map) {
-    if (_seatStatusSvgMap.empty() && map.empty()) {
-        return false;
-    }
-    _seatStatusSvgMap.clear();
-    _seatStatusSvgMap.insert(map.begin(), map.end());
     return true;
 }
 

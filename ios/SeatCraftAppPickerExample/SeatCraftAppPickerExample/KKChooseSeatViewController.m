@@ -29,7 +29,7 @@
     [seatStatusSvgPathMap add:3 path:[bundle pathForResource:@"icon_chooseSeat_noSelected" ofType:@"svg"]];
 
     NSString *svgPath = [bundle pathForResource:@"performbg_2" ofType:@"svg"];
-    [self.seatCraftView updateAreaSVG:svgPath];
+    [self.seatCraftView updateAreaSVGPath:svgPath];
     [self.seatCraftView updateSeatStatusSvgPathMap:seatStatusSvgPathMap];
 }
 

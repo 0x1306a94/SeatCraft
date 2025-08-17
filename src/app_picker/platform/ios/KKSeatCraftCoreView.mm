@@ -5,12 +5,14 @@
 //  Created by king on 2025/8/7.
 //
 
-#import <SeatCraftAppPicker/KKSeatCraftCoreSeatStatusSvgPathMap.h>
 #import <SeatCraftAppPicker/KKSeatCraftCoreView.h>
+
+#import <SeatCraftAppPicker/KKSeatCraftCoreSeatStatusSvgPathMap.h>
 
 #import <SeatCraft/common/common_macro.h>
 
 #import "core/SeatCraftCoreApp.hpp"
+#import "core/svg/SVGDataProvider.h"
 #import "core/ui/ElasticZoomPanController.hpp"
 #import "core/ui/SeatCraftViewCore.hpp"
 
@@ -18,6 +20,9 @@
 #import "KKSeatCraftCoreSeatStatusSvgPathMap+Private.h"
 #import "UIScrollViewZoomPanController.h"
 #import "renderer/IOSRendererBackend.h"
+#import "thread/IOSUIThreadScheduler.h"
+
+#import <tgfx/core/Data.h>
 
 #define USE_UISCROLLVIEW_TRICK 1
 
@@ -62,13 +67,11 @@
 @property (nonatomic, assign) BOOL isTapEnabled;
 @property (nonatomic, strong) CADisplayLink *displayLink;
 
-@property (nonatomic, strong) NSString *areaSVGPath;
-@property (nonatomic, strong) KKSeatCraftCoreSeatStatusSvgPathMap *seatStatusSvgPathMap;
 @end
 
 @implementation KKSeatCraftCoreView {
     std::shared_ptr<kk::SeatCraftCoreApp> _app;
-    std::unique_ptr<kk::ui::SeatCraftViewCore> _viewCore;
+    std::shared_ptr<kk::ui::SeatCraftViewCore> _viewCore;
 }
 
 - (void)dealloc {
@@ -109,8 +112,6 @@
 - (void)commonInit {
     self.backgroundColor = [UIColor whiteColor];
 
-    self.seatStatusSvgPathMap = [[KKSeatCraftCoreSeatStatusSvgPathMap alloc] init];
-
     [self setupViews];
     [self setupGesture];
 
@@ -121,7 +122,8 @@
 #else
     auto zoomPanController = std::make_unique<kk::ui::ElasticZoomPanController>();
 #endif
-    _viewCore = std::make_unique<kk::ui::SeatCraftViewCore>(_app, std::move(backend), std::move(zoomPanController));
+    auto uiScheduler = std::make_shared<kk::thread::IOSUIThreadScheduler>();
+    _viewCore = std::make_shared<kk::ui::SeatCraftViewCore>(_app, std::move(backend), std::move(zoomPanController), std::move(uiScheduler));
 }
 
 - (void)setupViews {
@@ -380,27 +382,78 @@
 }
 
 #pragma mark - public
-- (void)updateSeatStatusSVGPathMap {
-    auto seatSvgMap = [self.seatStatusSvgPathMap getMap];
-    _app->updateSeatStatusSVGPathMap(std::move(seatSvgMap));
-    _viewCore->draw(true);
+
+- (void)updateAreaSVGData:(NSData *)data {
+    auto provider = _app->getSvgDataProvider();
+    auto viewCore = _viewCore->shared_from_this();
+    __weak KKSeatCraftCoreView *weakSelf = self;
+    _viewCore->postWork([viewCore, provider, data, weakSelf] {
+        if (data == nil || data.length == 0) {
+            provider->setAreaSVGData(nullptr);
+        } else {
+            auto tgfxData = tgfx::Data::MakeWithCopy(data.bytes, data.length);
+            provider->setAreaSVGData(std::move(tgfxData));
+        }
+        viewCore->postUI([=] {
+            KKSeatCraftCoreView *strongSelf = weakSelf;
+            if (!strongSelf) {
+                return;
+            }
+            viewCore->updateAreaAvailable();
+#if USE_UISCROLLVIEW_TRICK
+            [strongSelf updateContentSize];
+#endif
+        });
+    });
 }
 
-- (void)updateAreaSVG:(NSString *)path {
-    if (path != nil) {
-        _viewCore->updateAreaSvgPath(path.UTF8String);
-    } else {
-        _viewCore->updateAreaSvgPath("");
-    }
-    _viewCore->invalidateContent();
+- (void)updateAreaSVGPath:(NSString *)path {
+    auto provider = _app->getSvgDataProvider();
+    auto viewCore = _viewCore->shared_from_this();
+    __weak KKSeatCraftCoreView *weakSelf = self;
+    _viewCore->postWork([viewCore, provider, path, weakSelf] {
+        if (path == nil || path.length == 0) {
+            provider->setAreaSVGData(nullptr);
+        } else {
+            auto tgfxData = tgfx::Data::MakeFromFile(path.UTF8String);
+            provider->setAreaSVGData(std::move(tgfxData));
+        }
+        viewCore->postUI([=] {
+            KKSeatCraftCoreView *strongSelf = weakSelf;
+            if (!strongSelf) {
+                return;
+            }
+            viewCore->updateAreaAvailable();
+            viewCore->invalidateContent();
 #if USE_UISCROLLVIEW_TRICK
-    [self updateContentSize];
+            [strongSelf updateContentSize];
 #endif
+        });
+    });
 }
 
 - (void)updateSeatStatusSvgPathMap:(KKSeatCraftCoreSeatStatusSvgPathMap *)seatStatusSvgPathMap {
-    self.seatStatusSvgPathMap = seatStatusSvgPathMap;
-    [self updateSeatStatusSVGPathMap];
+    auto pathMap = [seatStatusSvgPathMap getMap];
+    auto provider = _app->getSvgDataProvider();
+    auto viewCore = _viewCore->shared_from_this();
+    __weak KKSeatCraftCoreView *weakSelf = self;
+    _viewCore->postWork([viewCore, provider, pathMap = std::move(pathMap), weakSelf] {
+        kk::SeatStatusSVGDataMap dataMap;
+        for (const auto &[key, path] : pathMap) {
+            auto data = tgfx::Data::MakeFromFile(path);
+            if (data) {
+                dataMap[key] = data;
+            }
+        }
+        provider->setSeatStatusSVGData(dataMap);
+        viewCore->postUI([=] {
+            KKSeatCraftCoreView *strongSelf = weakSelf;
+            if (!strongSelf) {
+                return;
+            }
+            viewCore->updateSeatStatusAvailable();
+        });
+    });
 }
 
 @end

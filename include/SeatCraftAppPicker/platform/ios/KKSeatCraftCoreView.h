@@ -7,14 +7,15 @@
 
 #import <UIKit/UIKit.h>
 
+#import <SeatCraftAppPicker/KKSeatCraftCoreSeatStatusKey.h>
 #import <SeatCraftAppPicker/defines.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
 @class KKSeatCraftCoreSeatStatusSvgPathMap;
-
 SEAT_CRAFT_API @interface KKSeatCraftCoreView : UIView
-- (void)updateAreaSVG:(NSString *)path;
+- (void)updateAreaSVGData:(NSData *)data;
+- (void)updateAreaSVGPath:(NSString *)path;
 - (void)updateSeatStatusSvgPathMap:(KKSeatCraftCoreSeatStatusSvgPathMap *)seatStatusSvgPathMap;
 @end
 

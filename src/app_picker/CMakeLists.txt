@@ -17,6 +17,7 @@ endif()
 
 add_files_by_extension(APP_PICKER_CORE_FILES ".h;.hpp;.cpp"
     core
+    core/thread
     core/renderer
     core/ui
     core/svg
@@ -29,7 +30,8 @@ if(IOS)
     message(STATUS "IOS: ${IOS}")
     add_files_by_extension(APP_PICKER_PLATFORM_IOS_FILES ".h;.hpp;.m;.mm;.cpp"
         platform/ios
-        platform/renderer
+        platform/ios/thread
+        platform/ios/renderer
     )
     list(APPEND APP_PICKER_FILES ${APP_PICKER_PLATFORM_IOS_FILES})
     
@@ -49,6 +51,7 @@ elseif(ANDROID)
         platform/android
         platform/android/jni
         platform/android/ui
+        platform/android/thread
         platform/android/renderer
     )
     list(APPEND APP_PICKER_FILES ${APP_PICKER_PLATFORM_ANDROID_FILES})
@@ -83,6 +86,7 @@ elseif(DEFINED EMSCRIPTEN)
 
      add_files_by_extension(APP_PICKER_PLATFORM_WEB_FILES ".h;.hpp;.cpp"
         platform/web
+        platform/web/thread
         platform/web/renderer
     )
     list(APPEND APP_PICKER_FILES ${APP_PICKER_PLATFORM_WEB_FILES})
