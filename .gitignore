@@ -5,3 +5,4 @@
 /ios/gen_xcode
 /build
 /build*
+/CMakeLists.*.user
