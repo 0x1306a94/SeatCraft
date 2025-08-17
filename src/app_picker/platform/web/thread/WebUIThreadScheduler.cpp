@@ -7,6 +7,7 @@ void WebUIThreadScheduler::schedule(std::function<void()> task) {
     if (task == nullptr) {
         return;
     }
+    task();
 }
 
 }  // namespace kk::thread

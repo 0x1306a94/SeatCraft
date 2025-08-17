@@ -52,8 +52,12 @@ EMSCRIPTEN_BINDINGS(SeatCraftAppPicker) {
         auto app = viewCore.getApp();
         auto provider = app->getSvgDataProvider();
         auto data = GetDataFromEmscripten(emscriptenData);
-        provider->setAreaSVGData(std::move(data));
-        viewCore.updateAreaAvailable();
+        viewCore.postWork([self = viewCore.shared_from_this(), provider, data = std::move(data)] {
+            provider->setAreaSVGData(std::move(data));
+            self->postUI([self] {
+                self->updateAreaAvailable();
+            });
+        });
     });
 
     auto handlePan = optional_override([](kk::ui::SeatCraftViewCore &viewCore, float deltaX, float deltaY) {
