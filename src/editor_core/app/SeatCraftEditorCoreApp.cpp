@@ -10,9 +10,8 @@
 #include <tgfx/platform/Print.h>
 
 namespace kk {
-SeatCraftEditorCoreApp::SeatCraftEditorCoreApp(int boundsWidth, int boundsHeight, float density)
-    : _boundsWidth(boundsWidth)
-    , _boundsHeight(boundsHeight)
+SeatCraftEditorCoreApp::SeatCraftEditorCoreApp(const tgfx::Size &boundsSize, float density)
+    : _boundsSize(boundsSize)
     , _density(density) {
     tgfx::PrintLog("%s", __PRETTY_FUNCTION__);
 }
@@ -21,19 +20,16 @@ SeatCraftEditorCoreApp::~SeatCraftEditorCoreApp() {
     tgfx::PrintLog("%s", __PRETTY_FUNCTION__);
 }
 
-int SeatCraftEditorCoreApp::getBoundsWidth() const {
-    return _boundsWidth;
-}
-int SeatCraftEditorCoreApp::getBoundsHeight() const {
-    return _boundsHeight;
+const tgfx::Size &SeatCraftEditorCoreApp::getBoundsSize() const {
+    return _boundsSize;
 }
 
 float SeatCraftEditorCoreApp::density() const {
     return _density;
 }
 
-bool SeatCraftEditorCoreApp::updateBounds(int width, int height, float density) {
-    if (width <= 0 || height <= 0) {
+bool SeatCraftEditorCoreApp::updateBounds(const tgfx::Size &boundsSize, float density) {
+    if (boundsSize.width <= 0 || boundsSize.height <= 0) {
         tgfx::PrintError("%s width or height is invalid!", __PRETTY_FUNCTION__);
         return false;
     }
@@ -43,12 +39,11 @@ bool SeatCraftEditorCoreApp::updateBounds(int width, int height, float density) 
         return false;
     }
 
-    if (_boundsWidth == width && _boundsHeight == height && _density == density) {
+    if (_boundsSize == boundsSize && _density == density) {
         return false;
     }
 
-    _boundsWidth = width;
-    _boundsHeight = height;
+    _boundsSize = boundsSize;
     _density = density;
     return true;
 }

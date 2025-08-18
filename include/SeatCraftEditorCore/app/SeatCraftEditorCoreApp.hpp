@@ -15,23 +15,22 @@
 namespace kk {
 class SEAT_CRAFT_EDITER_API SeatCraftEditorCoreApp {
   public:
-    explicit SeatCraftEditorCoreApp(int boundsWidth = 1280, int boundsHeight = 720, float density = 1.0f);
+    explicit SeatCraftEditorCoreApp(const tgfx::Size &boundsSize = {1280, 720}, float density = 1.0f);
     ~SeatCraftEditorCoreApp();
 
     SeatCraftEditorCoreApp(const SeatCraftEditorCoreApp &) = delete;
     SeatCraftEditorCoreApp &operator=(const SeatCraftEditorCoreApp &) = delete;
 
     /// canvas 尺寸
-    int getBoundsWidth() const;
-    int getBoundsHeight() const;
+    const tgfx::Size &getBoundsSize() const;
+
     float density() const;
 
-    bool updateBounds(int width, int height, float density);
+    bool updateBounds(const tgfx::Size &boundsSize, float density);
 
   private:
     /// canvas 尺寸
-    int _boundsWidth{1280};
-    int _boundsHeight{720};
+    tgfx::Size _boundsSize{1280, 720};
     float _density{1.0f};
 };
 };  // namespace kk

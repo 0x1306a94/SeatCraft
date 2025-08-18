@@ -28,7 +28,7 @@ class GridBackgroundLayer : public tgfx::Layer {
         return std::shared_ptr<GridBackgroundLayer>(new GridBackgroundLayer());
     }
 
-    void setContentSize(const tgfx::Size contentSize) {
+    void setContentSize(const tgfx::Size &contentSize) {
         if (_contentSize == contentSize) {
             return;
         }
@@ -61,8 +61,7 @@ class GridBackgroundLayer : public tgfx::Layer {
             bool draw = (y / tileSize) % 2 == 1;
             for (int x = 0; x < width; x += tileSize) {
                 if (draw) {
-                    auto rect = tgfx::Rect::MakeXYWH(static_cast<float>(x), static_cast<float>(y),
-                                                     static_cast<float>(tileSize), static_cast<float>(tileSize));
+                    auto rect = tgfx::Rect::MakeXYWH(static_cast<float>(x), static_cast<float>(y), static_cast<float>(tileSize), static_cast<float>(tileSize));
                     canvas->drawRect(rect, paint);
                 }
                 draw = !draw;
@@ -93,9 +92,7 @@ void GridBackgroundLayerTree::prepare(tgfx::Canvas *canvas, const kk::SeatCraftE
     UNUSED_PARAM(canvas);
     UNUSED_PARAM(force);
     if (_root != nullptr) {
-        auto width = app->getBoundsWidth();
-        auto height = app->getBoundsHeight();
-        _root->setContentSize(tgfx::Size{static_cast<float>(width), static_cast<float>(height)});
+        _root->setContentSize(app->getBoundsSize());
         _root->setDensity(app->density());
     }
 }

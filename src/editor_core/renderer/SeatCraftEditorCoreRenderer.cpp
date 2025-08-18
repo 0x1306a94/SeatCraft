@@ -55,7 +55,7 @@ bool SeatCraftEditorCoreRenderer::updateSize() {
     auto width = _backend->getWidth();
     auto height = _backend->getHeight();
     auto density = _backend->getDensity();
-    auto sizeChanged = _app->updateBounds(width, height, density);
+    auto sizeChanged = _app->updateBounds(tgfx::Size{static_cast<float>(width), static_cast<float>(height)}, density);
     if (sizeChanged) {
         window->invalidSize();
     }

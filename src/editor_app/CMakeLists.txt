@@ -32,38 +32,37 @@ set(CMAKE_AUTORCC ON)
 find_package(QT NAMES Qt6 REQUIRED COMPONENTS Core)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Widgets OpenGL Qml Quick)
 list(APPEND ${PROJECT_NAME}_LIBS
-    tgfx
     Qt${QT_VERSION_MAJOR}::Core 
     Qt${QT_VERSION_MAJOR}::Widgets
     Qt${QT_VERSION_MAJOR}::OpenGL 
     Qt${QT_VERSION_MAJOR}::Qml 
     Qt${QT_VERSION_MAJOR}::Quick)
 
-if (APPLE)
-    find_library(APPLICATION_SERVICES_FRAMEWORK ApplicationServices REQUIRED)
-    list(APPEND ${PROJECT_NAME}_LIBS  ${APPLICATION_SERVICES_FRAMEWORK})
-    find_library(QUARTZ_CORE QuartzCore REQUIRED)
-    list(APPEND ${PROJECT_NAME}_LIBS  ${QUARTZ_CORE})
-    find_library(COCOA Cocoa REQUIRED)
-    list(APPEND ${PROJECT_NAME}_LIBS  ${COCOA})
-    find_library(FOUNDATION Foundation REQUIRED)
-    list(APPEND ${PROJECT_NAME}_LIBS  ${FOUNDATION})
-    find_library(ICONV_LIBRARIES NAMES iconv libiconv libiconv-2 c)
-    list(APPEND ${PROJECT_NAME}_LIBS  ${ICONV_LIBRARIES})
-    find_library(VIDEOTOOLBOX VideoToolbox)
-    list(APPEND ${PROJECT_NAME}_LIBS  ${VIDEOTOOLBOX})
-    find_library(CORE_MEDIA CoreMedia)
-    list(APPEND ${PROJECT_NAME}_LIBS  ${CORE_MEDIA})
-    find_library(COMPRESSION_LIBRARIES NAMES compression)
-    list(APPEND ${PROJECT_NAME}_LIBS  ${COMPRESSION_LIBRARIES})
-elseif (WIN32)
-    set(BUILD_USE_64BITS ON)
-    add_definitions(-DNOMINMAX -D_USE_MATH_DEFINES)
-    find_library(Bcrypt_LIB Bcrypt)
-    list(APPEND ${PROJECT_NAME}_LIBS  ${Bcrypt_LIB})
-    find_library(ws2_32_LIB ws2_32)
-    list(APPEND ${PROJECT_NAME}_LIBS  ${ws2_32_LIB})
-endif()
+# if (APPLE)
+#     find_library(APPLICATION_SERVICES_FRAMEWORK ApplicationServices REQUIRED)
+#     list(APPEND ${PROJECT_NAME}_LIBS  ${APPLICATION_SERVICES_FRAMEWORK})
+#     find_library(QUARTZ_CORE QuartzCore REQUIRED)
+#     list(APPEND ${PROJECT_NAME}_LIBS  ${QUARTZ_CORE})
+#     find_library(COCOA Cocoa REQUIRED)
+#     list(APPEND ${PROJECT_NAME}_LIBS  ${COCOA})
+#     find_library(FOUNDATION Foundation REQUIRED)
+#     list(APPEND ${PROJECT_NAME}_LIBS  ${FOUNDATION})
+#     find_library(ICONV_LIBRARIES NAMES iconv libiconv libiconv-2 c)
+#     list(APPEND ${PROJECT_NAME}_LIBS  ${ICONV_LIBRARIES})
+#     find_library(VIDEOTOOLBOX VideoToolbox)
+#     list(APPEND ${PROJECT_NAME}_LIBS  ${VIDEOTOOLBOX})
+#     find_library(CORE_MEDIA CoreMedia)
+#     list(APPEND ${PROJECT_NAME}_LIBS  ${CORE_MEDIA})
+#     find_library(COMPRESSION_LIBRARIES NAMES compression)
+#     list(APPEND ${PROJECT_NAME}_LIBS  ${COMPRESSION_LIBRARIES})
+# elseif (WIN32)
+#     set(BUILD_USE_64BITS ON)
+#     add_definitions(-DNOMINMAX -D_USE_MATH_DEFINES)
+#     find_library(Bcrypt_LIB Bcrypt)
+#     list(APPEND ${PROJECT_NAME}_LIBS  ${Bcrypt_LIB})
+#     find_library(ws2_32_LIB ws2_32)
+#     list(APPEND ${PROJECT_NAME}_LIBS  ${ws2_32_LIB})
+# endif()
 
 qt_standard_project_setup(REQUIRES 6.9)
 
@@ -78,8 +77,6 @@ find_package(Qt6 REQUIRED COMPONENTS Quick)
 qt_add_executable(${PROJECT_NAME}
     ${EDITOR_SRC_FILES}
 )
-
-target_link_libraries(SeatCraftEditor PRIVATE Qt6::Quick)
 
 add_files_by_extension(EDITOR_QML_FILES ".qml"
     assets/qml

@@ -72,7 +72,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     ${SEAT_CRAFT_ROOT_INCLUDE_DIR}
 )
 
-target_link_libraries(${PROJECT_NAME} PRIVATE 
+target_link_libraries(${PROJECT_NAME} PUBLIC
     ${${PROJECT_NAME}_LIBS}
     tgfx
 )
