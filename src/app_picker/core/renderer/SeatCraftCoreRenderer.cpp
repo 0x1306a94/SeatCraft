@@ -78,12 +78,15 @@ void SeatCraftCoreRenderer::draw(bool force) {
     }
 
     auto window = _backend->getWindow();
-
     if (window == nullptr) {
         return;
     }
 
     auto device = window->getDevice();
+    if (device == nullptr) {
+        return;
+    }
+
     auto context = device->lockContext();
     if (context == nullptr) {
         return;
@@ -96,6 +99,15 @@ void SeatCraftCoreRenderer::draw(bool force) {
     }
 
     auto canvas = surface->getCanvas();
+    if (canvas == nullptr) {
+        device->unlock();
+        return;
+    }
+
+    if (_app == nullptr) {
+        device->unlock();
+        return;
+    }
 
     auto appPtr = _app.get();
     _gridLayer->prepare(canvas, appPtr, force);
