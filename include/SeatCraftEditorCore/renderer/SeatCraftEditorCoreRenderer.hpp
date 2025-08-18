@@ -16,11 +16,19 @@ namespace tgfx {
 class Window;
 };
 
+namespace kk {
+class SeatCraftEditorCoreApp;
+
+namespace drawers {
+class GridBackgroundLayerTree;
+};
+};  // namespace kk
+
 namespace kk::renderer {
 class RendererBackend;
 class SEAT_CRAFT_EDITER_API SeatCraftEditorCoreRenderer {
   public:
-    explicit SeatCraftEditorCoreRenderer(std::shared_ptr<RendererBackend> backend);
+    explicit SeatCraftEditorCoreRenderer(std::shared_ptr<kk::SeatCraftEditorCoreApp> app, std::shared_ptr<RendererBackend> backend);
 
     ~SeatCraftEditorCoreRenderer();
 
@@ -33,9 +41,10 @@ class SEAT_CRAFT_EDITER_API SeatCraftEditorCoreRenderer {
 
     void draw(bool force = false);
 
-
   private:
+    std::shared_ptr<kk::SeatCraftEditorCoreApp> _app;
     std::shared_ptr<RendererBackend> _backend;
+    std::unique_ptr<kk::drawers::GridBackgroundLayerTree> _gridLayer;
     bool _invalidate;
 };
 };  // namespace kk::renderer

@@ -5,9 +5,13 @@
 
 #include <memory>
 
-namespace kk::renderer {
+namespace kk {
+class SeatCraftEditorCoreApp;
+
+namespace renderer {
 class SeatCraftEditorCoreRenderer;
 };
+};  // namespace kk
 
 namespace kk::view {
 class SeatCraftEditorCoreView : public QQuickItem {
@@ -19,7 +23,8 @@ class SeatCraftEditorCoreView : public QQuickItem {
 
     Q_INVOKABLE void invalidateContent();
 
-    Q_INVOKABLE void draw();
+    Q_INVOKABLE void handlePan(float deltaX, float deltaY);
+    Q_INVOKABLE void handlePinch(float scale, float centerX, float centerY);
 
   protected:
     QSGNode *updatePaintNode(QSGNode *, UpdatePaintNodeData *) override;
@@ -29,6 +34,7 @@ class SeatCraftEditorCoreView : public QQuickItem {
     void onSceneGraphInvalidated();
 
   private:
+    std::shared_ptr<kk::SeatCraftEditorCoreApp> _app{nullptr};
     std::shared_ptr<kk::renderer::SeatCraftEditorCoreRenderer> _renderer{nullptr};
     bool _connectSceneGraphInvalidated{false};
 };

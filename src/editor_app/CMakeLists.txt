@@ -31,7 +31,7 @@ set(CMAKE_AUTORCC ON)
 
 find_package(QT NAMES Qt6 REQUIRED COMPONENTS Core)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Widgets OpenGL Qml Quick)
-list(APPEND ${PROJECT_NAME}_LIBS 
+list(APPEND ${PROJECT_NAME}_LIBS
     tgfx
     Qt${QT_VERSION_MAJOR}::Core 
     Qt${QT_VERSION_MAJOR}::Widgets

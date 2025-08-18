@@ -1,18 +1,19 @@
 import QtQuick
+import QtQuick.Window
 import QtQuick.Controls
 
-ApplicationWindow {
+Window {
     id: appWindow
-    width: 600
-    height: 800
+    width: 800
+    height: 600
     visible: true
     flags: Qt.Window | Qt.FramelessWindowHint
-    title: qsTr("Hello World")
+    color: "transparent"
 
+    // 页面加载
     Loader {
         id: pageLoader
         anchors.fill: parent
-        source: 'WelcomePage.qml'
+        source: "WelcomePage.qml"
     }
-    
 }

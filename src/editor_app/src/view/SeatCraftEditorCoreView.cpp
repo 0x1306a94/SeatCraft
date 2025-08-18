@@ -3,6 +3,7 @@
 #include "renderder/QTRendererBackend.h"
 
 #include <SeatCraft/common/common_macro.h>
+#include <SeatCraftEditorCore/app/SeatCraftEditorCoreApp.hpp>
 #include <SeatCraftEditorCore/renderer/SeatCraftEditorCoreRenderer.hpp>
 
 #include <tgfx/gpu/opengl/qt/QGLWindow.h>
@@ -18,13 +19,27 @@ namespace kk::view {
 
 SeatCraftEditorCoreView::SeatCraftEditorCoreView(QQuickItem *parent)
     : QQuickItem(parent)
+    , _app(std::make_shared<kk::SeatCraftEditorCoreApp>())
     , _renderer(nullptr) {
     tgfx::PrintLog("%s", __PRETTY_FUNCTION__);
 
     setFlag(ItemHasContents, true);
 
     auto backend = std::make_shared<kk::renderer::QTRendererBackend>(this);
-    _renderer = std::make_shared<kk::renderer::SeatCraftEditorCoreRenderer>(std::move(backend));
+    _renderer = std::make_shared<kk::renderer::SeatCraftEditorCoreRenderer>(_app, std::move(backend));
+
+    // 监听宽高变化
+    connect(this, &SeatCraftEditorCoreView::widthChanged, this, [this]() {
+        if (updateSize()) {
+            update();
+        }
+    });
+
+    connect(this, &SeatCraftEditorCoreView::heightChanged, this, [this]() {
+        if (updateSize()) {
+            update();
+        }
+    });
 }
 
 SeatCraftEditorCoreView::~SeatCraftEditorCoreView() {
@@ -33,6 +48,9 @@ SeatCraftEditorCoreView::~SeatCraftEditorCoreView() {
 
 bool SeatCraftEditorCoreView::updateSize() {
     auto sizeChanged = _renderer->updateSize();
+    if (sizeChanged) {
+        invalidateContent();
+    }
     return sizeChanged;
 }
 
@@ -41,8 +59,17 @@ void SeatCraftEditorCoreView::invalidateContent() {
     update();
 }
 
-void SeatCraftEditorCoreView::draw() {
-    _renderer->draw();
+void SeatCraftEditorCoreView::handlePan(float deltaX, float deltaY) {
+    UNUSED_PARAM(deltaX);
+    UNUSED_PARAM(deltaY);
+    update();
+}
+
+void SeatCraftEditorCoreView::handlePinch(float scale, float centerX, float centerY) {
+    UNUSED_PARAM(scale);
+    UNUSED_PARAM(centerX);
+    UNUSED_PARAM(centerY);
+    update();
 }
 
 QSGNode *SeatCraftEditorCoreView::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *) {
@@ -62,7 +89,7 @@ QSGNode *SeatCraftEditorCoreView::updatePaintNode(QSGNode *oldNode, UpdatePaintN
             onBackendWindowCreated();
         }
 
-        draw();
+        _renderer->draw();
 
         auto tgfxWindow = std::static_pointer_cast<tgfx::QGLWindow>(backendWindow);
         auto node = static_cast<QSGImageNode *>(oldNode);

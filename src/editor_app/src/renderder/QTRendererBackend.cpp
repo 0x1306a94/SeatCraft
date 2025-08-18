@@ -2,6 +2,7 @@
 
 #include <tgfx/gpu/opengl/qt/QGLWindow.h>
 #include <tgfx/platform/Print.h>
+
 namespace kk::renderer {
 QTRendererBackend::QTRendererBackend(QQuickItem *quickItem)
     : _quickItem(quickItem) {

@@ -7,7 +7,10 @@
 
 #include <SeatCraftEditorCore/renderer/SeatCraftEditorCoreRenderer.hpp>
 
+#include "drawers/GridBackgroundLayerTree.hpp"
+
 #include <SeatCraft/common/common_macro.h>
+#include <SeatCraftEditorCore/app/SeatCraftEditorCoreApp.hpp>
 #include <SeatCraftEditorCore/renderer/RendererBackend.hpp>
 
 #include <tgfx/core/Canvas.h>
@@ -17,8 +20,10 @@
 #include <tgfx/platform/Print.h>
 
 namespace kk::renderer {
-SeatCraftEditorCoreRenderer::SeatCraftEditorCoreRenderer(std::shared_ptr<RendererBackend> backend)
-    : _backend(std::move(backend))
+SeatCraftEditorCoreRenderer::SeatCraftEditorCoreRenderer(std::shared_ptr<kk::SeatCraftEditorCoreApp> app, std::shared_ptr<RendererBackend> backend)
+    : _app(std::move(app))
+    , _backend(std::move(backend))
+    , _gridLayer(std::make_unique<kk::drawers::GridBackgroundLayerTree>())
     , _invalidate(true) {
 
     tgfx::PrintLog("%s", __PRETTY_FUNCTION__);
@@ -47,11 +52,14 @@ bool SeatCraftEditorCoreRenderer::updateSize() {
         return false;
     }
 
-    // auto width = _backend->getWidth();
-    // auto height = _backend->getHeight();
-    // auto density = _backend->getDensity();
-    // return sizeChanged;
-    return false;
+    auto width = _backend->getWidth();
+    auto height = _backend->getHeight();
+    auto density = _backend->getDensity();
+    auto sizeChanged = _app->updateBounds(width, height, density);
+    if (sizeChanged) {
+        window->invalidSize();
+    }
+    return sizeChanged;
 }
 
 void SeatCraftEditorCoreRenderer::invalidateContent() {
@@ -64,8 +72,11 @@ void SeatCraftEditorCoreRenderer::draw(bool force) {
         return;
     }
 
-    auto window = _backend->getWindow();
+    if (_app == nullptr) {
+        return;
+    }
 
+    auto window = _backend->getWindow();
     if (window == nullptr) {
         return;
     }
@@ -87,14 +98,25 @@ void SeatCraftEditorCoreRenderer::draw(bool force) {
     }
 
     auto canvas = surface->getCanvas();
-
-    if (!force && !_invalidate) {
+    if (canvas == nullptr) {
         device->unlock();
         return;
     }
 
-    canvas->clear(tgfx::Color::White());
+    auto appPtr = _app.get();
+    _gridLayer->prepare(canvas, appPtr, force);
+
+    bool hasContentChanged = _gridLayer->hasContentChanged();
+
+    if (!hasContentChanged && !force && !_invalidate) {
+        device->unlock();
+        return;
+    }
+
+    canvas->clear();
     canvas->save();
+
+    _gridLayer->draw(canvas, appPtr);
 
     canvas->restore();
 
