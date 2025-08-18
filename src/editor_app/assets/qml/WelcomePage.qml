@@ -1,14 +1,22 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import Qt5Compat.GraphicalEffects
 
 Rectangle {
     id: welcomePage
-    width: 640
-    height: 800
+    anchors.fill: parent
     color: '#191919'
-    radius: 16
-    clip: true
+    // radius: 16
+    // clip: true
+    layer.enabled: true
+    layer.effect: OpacityMask {
+        maskSource: Rectangle {
+            width: welcomePage.width // 动态绑定到 welcomePage 的宽度
+            height: welcomePage.height // 动态绑定到 welcomePage 的高度
+            radius: 16
+        }
+    }
 
     property bool dragging: false
     property point mouseLast: Qt.point(0, 0)
@@ -48,9 +56,6 @@ Rectangle {
                 Qt.quit()
             }
         }
-
-
-
 
 
         Rectangle {
