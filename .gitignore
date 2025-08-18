@@ -6,3 +6,4 @@
 /build
 /build*
 /CMakeLists.*.user
+*.qml.autosave
