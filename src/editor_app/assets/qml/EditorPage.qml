@@ -33,11 +33,12 @@ Window {
 
             Button {
                 id: expandButton
-                anchors.centerIn: parent
-                text: editerPageLeftPanel.visible ? "←" : "→"
+                anchors.right: parent.right
+                anchors.rightMargin: 20
+                anchors.verticalCenter: parent.verticalCenter
+                text: "←"
                 onClicked: {
                     editerPageLeftPanel.visible = !editerPageLeftPanel.visible
-                    text = editerPageLeftPanel.visible ? "←" : "→"
                 }
             }
         }

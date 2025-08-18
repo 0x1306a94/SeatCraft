@@ -1,26 +1,14 @@
 import QtQuick
 import QtQuick.Controls
-import Qt5Compat.GraphicalEffects
+import QtQuick.Layouts
 
 Rectangle {
     id: welcomePage
     width: 640
     height: 800
+    color: '#191919'
     radius: 16
     clip: true
-
-    Rectangle {
-        id: backgroundLayer
-        anchors.fill: parent
-        color: "#99000000"
-    }
-
-    FastBlur {
-        anchors.fill: parent
-        source: backgroundLayer
-        radius: 20
-        transparentBorder: true
-    }
 
     property bool dragging: false
     property point mouseLast: Qt.point(0, 0)
@@ -61,20 +49,101 @@ Rectangle {
             }
         }
 
-        Button {
-            id: welcomePageOpenButton
-            anchors.centerIn: parent
-            text: "Open Project"
-            onClicked: {
-                console.log('Open Project')
-                // pageLoader.source = "EditorPage.qml"
-                var component = Qt.createComponent("EditorPage.qml")
-                if (component.status === Component.Ready) {
-                    var newWindow = component.createObject(appWindow)
-                    newWindow.show()
-                    appWindow.hide()
-                }
+
+
+
+
+        Rectangle {
+            id: recentProjectsContaier
+            anchors.top: parent.top
+            anchors.right: parent.right
+            anchors.bottom: parent.bottom
+            width: 300
+            color: '#2a2a2a'
+
+            ColumnLayout {
+                id: recentProjectsLayout
+                anchors.fill: parent
+
             }
         }
+
+
+        ColumnLayout {
+            id: menuLayout
+            anchors.right: recentProjectsContaier.left
+            anchors.rightMargin: 40
+            anchors.left: parent.left
+            anchors.leftMargin: 40
+            anchors.bottom: parent.bottom
+            anchors.bottomMargin: 50
+            spacing: 8
+
+            Rectangle {
+                id: createProject
+                Layout.alignment: Qt.AlignLeading
+                Layout.fillWidth: true
+                height: 40
+                radius: 10
+                color: '#282828'
+
+
+                Text {
+                    anchors.verticalCenter: parent.verticalCenter
+                    anchors.left: parent.left
+                    anchors.leftMargin: 20
+                    text: 'Create New Project...'
+                    color: 'white'
+                    font.pointSize: 16
+                    font.bold: true
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: {
+                        var component = Qt.createComponent("EditorPage.qml")
+                        if (component.status === Component.Ready) {
+                            var newWindow = component.createObject(appWindow)
+                            newWindow.show()
+                            appWindow.hide()
+                        }
+                    }
+                }
+            }
+
+            Rectangle {
+                id: openProject
+                Layout.alignment: Qt.AlignLeading
+                Layout.fillWidth: true
+                height: 40
+                radius: 10
+                color: '#282828'
+
+
+                Text {
+                    anchors.verticalCenter: parent.verticalCenter
+                    anchors.left: parent.left
+                    anchors.leftMargin: 20
+                    text: 'Open Existing Project...'
+                    color: 'white'
+                    font.pointSize: 16
+                    font.bold: true
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: {
+                        var component = Qt.createComponent("EditorPage.qml")
+                        if (component.status === Component.Ready) {
+                            var newWindow = component.createObject(appWindow)
+                            newWindow.show()
+                            appWindow.hide()
+                        }
+                    }
+                }
+            }
+
+        }
+
     }
 }
