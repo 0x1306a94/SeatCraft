@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.13)
-project(SeatCraftEditor)
+project(SeatCraftEditorCore)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -11,7 +11,6 @@ endif ()
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     add_definitions(
         -Werror -Wall -Wextra -Weffc++ -Wconversion -pedantic -Werror=return-type
-        -Wno-gnu-zero-variadic-macro-arguments
     )
 endif ()
 
@@ -22,22 +21,6 @@ endif (MSVC)
 if (CMAKE_BUILD_TYPE MATCHES "Debug")
     add_definitions(-DDEBUG)
 endif ()
-
-add_definitions(-DQT_NO_KEYWORDS)
-
-set(CMAKE_AUTOMOC ON)
-set(CMAKE_AUTOUIC ON)
-set(CMAKE_AUTORCC ON)
-
-find_package(QT NAMES Qt6 REQUIRED COMPONENTS Core)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Widgets OpenGL Qml Quick)
-list(APPEND ${PROJECT_NAME}_LIBS 
-    tgfx
-    Qt${QT_VERSION_MAJOR}::Core 
-    Qt${QT_VERSION_MAJOR}::Widgets
-    Qt${QT_VERSION_MAJOR}::OpenGL 
-    Qt${QT_VERSION_MAJOR}::Qml 
-    Qt${QT_VERSION_MAJOR}::Quick)
 
 if (APPLE)
     find_library(APPLICATION_SERVICES_FRAMEWORK ApplicationServices REQUIRED)
@@ -65,39 +48,29 @@ elseif (WIN32)
     list(APPEND ${PROJECT_NAME}_LIBS  ${ws2_32_LIB})
 endif()
 
-qt_standard_project_setup(REQUIRES 6.9)
-
-add_files_by_extension(EDITOR_SRC_FILES ".h;.hpp;.cpp"
-    src
+add_files_by_extension(EDITOR_CORE_SRC_FILES ".h;.hpp;.cpp"
+    renderer
 )
 
-qt_add_executable(${PROJECT_NAME}
-    ${EDITOR_SRC_FILES}
+add_files_by_extension(EDITOR_CORE_PUBLIC_HEADER_FILES ".h;.hpp"
+    ${SEAT_CRAFT_ROOT_INCLUDE_DIR}/${PROJECT_NAME}/common
+    ${SEAT_CRAFT_ROOT_INCLUDE_DIR}/${PROJECT_NAME}/renderer
 )
 
+message(STATUS "EDITOR_CORE_PUBLIC_HEADER_FILES: ${EDITOR_CORE_PUBLIC_HEADER_FILES}")
+message(STATUS "EDITOR_CORE_SRC_FILES: ${EDITOR_CORE_SRC_FILES}")
 
-add_files_by_extension(EDITOR_QML_FILES ".qml"
-    assets/qml
-)
+add_library(${PROJECT_NAME} STATIC ${EDITOR_CORE_SRC_FILES} ${EDITOR_CORE_PUBLIC_HEADER_FILES})
 
-make_files_relative(EDITOR_QML_FILES_REL ${CMAKE_CURRENT_LIST_DIR} ${EDITOR_QML_FILES})
-message(STATUS "EDITOR_QML_FILES_REL: ${EDITOR_QML_FILES_REL}")
+add_source_group(EDITOR_CORE_PUBLIC_HEADER_FILES ${SEAT_CRAFT_ROOT_INCLUDE_DIR}/${PROJECT_NAME} "PublicHeaders")
+add_source_group(EDITOR_CORE_SRC_FILES ${CMAKE_CURRENT_LIST_DIR} "Sources")
 
-qt_add_qml_module(${PROJECT_NAME}
-    URI main
-    VERSION 1.0
-    QML_FILES ${EDITOR_QML_FILES_REL}
-)
-
-
-add_source_group(EDITOR_SRC_FILES ${CMAKE_CURRENT_LIST_DIR}/src "Sources")
-add_source_group(EDITOR_QML_FILES ${CMAKE_CURRENT_LIST_DIR}/assets "Assets")
-
-set_target_properties(${PROJECT_NAME} PROPERTIES
-    MACOSX_BUNDLE TRUE
-    WIN32_EXECUTABLE TRUE
+target_include_directories(${PROJECT_NAME} PRIVATE
+    .
+    ${SEAT_CRAFT_ROOT_INCLUDE_DIR}
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE 
     ${${PROJECT_NAME}_LIBS}
+    tgfx
 )

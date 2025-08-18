@@ -5,6 +5,8 @@
 #include <QQmlContext>
 #include <QQuickWindow>
 
+#include "view/SeatCraftEditorCoreView.h"
+
 int main(int argc, char *argv[]) {
 
     QApplication::setApplicationName("SeatCraftEditor");
@@ -23,6 +25,9 @@ int main(int argc, char *argv[]) {
 #endif
 
     QApplication app(argc, argv);
+
+    qmlRegisterType<kk::view::SeatCraftEditorCoreView>("SeatCraftEditorCore", 1, 0, "SeatCraftEditorCoreView");
+
     QQmlApplicationEngine engine;
     engine.loadFromModule("main", "Main");
     auto window = static_cast<QQuickWindow *>(engine.rootObjects().at(0));
