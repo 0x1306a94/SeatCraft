@@ -31,6 +31,7 @@ add_subdirectory(third_party/tgfx)
 # 恢复原来的
 # set(CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE_RELEASE_SAVED} CACHE STRING "Restore build type" FORCE)
 
+add_subdirectory(src/design_model)
 add_subdirectory(src/editor_core)
 if(ENABLE_EDITOR_APP)
     add_subdirectory(src/editor_app)
