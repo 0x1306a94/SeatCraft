@@ -73,7 +73,7 @@ struct SeatCraftNodeTableChunk {
 
 struct SeatCraftNodeTableData {
     uint32_t nums;
-    SeatCraftNodeTableChunk chunks[0];
+    SeatCraftNodeTableChunk *chunks;
 };
 
 typedef enum : uint16_t {
@@ -97,7 +97,7 @@ struct SeatCraftGraphShapeNode {
     uint32_t fillColorIndex;    // 对应颜色池的索引
     uint32_t strokeColorIndex;  // 对应颜色池的索引
     uint32_t strokeIndex;       // 对应浮点数池的索引
-}
+};
 
 struct SeatCraftGraphRectNode {
     SeatCraftGraphShapeNode base;
