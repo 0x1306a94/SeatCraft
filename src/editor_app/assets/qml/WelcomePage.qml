@@ -109,7 +109,7 @@ Rectangle {
                 MouseArea {
                     anchors.fill: parent
                     onClicked: {
-                        var component = Qt.createComponent("EditorWindow.qml")
+                        var component = Qt.createComponent("CreateProjectWindow.qml")
                         if (component.status === Component.Ready) {
                             var newWindow = component.createObject(appWindow)
                             newWindow.show()
