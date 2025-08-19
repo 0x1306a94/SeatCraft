@@ -6,6 +6,7 @@
 #include <QQuickWindow>
 
 #include "event/DockHandler.h"
+#include "utils/WindowUtils.h"
 #include "view/SeatCraftEditorCoreView.h"
 
 static constexpr char QML_PACKAGE_NAME[] = "com.seatcraft.editor";
@@ -28,12 +29,16 @@ int main(int argc, char *argv[]) {
 #endif
 
     QApplication app(argc, argv);
+    app.setQuitOnLastWindowClosed(false);
 
     qmlRegisterType<kk::view::SeatCraftEditorCoreView>(QML_PACKAGE_NAME, 1, 0, "SeatCraftEditorCoreView");
     qmlRegisterType<kk::event::DockHandler>(QML_PACKAGE_NAME, 1, 0, "DockHandler");
+    qmlRegisterSingletonInstance(QML_PACKAGE_NAME, 1, 0, "WindowUtils", &kk::utils::WindowUtils::Instance());
 
     QQmlApplicationEngine engine;
-    engine.loadFromModule("main", "Main");
+    kk::utils::WindowUtils::Instance().setQmlEngine(&engine);
+
+    engine.loadFromModule("main", "MainWindow");
     auto window = static_cast<QQuickWindow *>(engine.rootObjects().at(0));
 #if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
     window->setPersistentGraphics(true);

@@ -71,6 +71,7 @@ add_files_by_extension(EDITOR_SRC_FILES ".h;.hpp;.cpp"
     src/view
     src/event
     src/renderer
+    src/utils
 )
 
 qt_add_executable(${PROJECT_NAME}

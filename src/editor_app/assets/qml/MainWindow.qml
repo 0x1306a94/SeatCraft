@@ -18,7 +18,7 @@ ApplicationWindow {
     DockHandler {
         id: dockHandler
         onDockIconClicked: {
-            if (!appWindow.visible) {
+            if (WindowUtils.windowCount() === 1 && !appWindow.visible) {
                 appWindow.show()
             }
         }

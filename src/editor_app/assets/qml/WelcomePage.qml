@@ -1,7 +1,9 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import QtQuick.Dialogs
 import Qt5Compat.GraphicalEffects
+import com.seatcraft.editor
 
 Rectangle {
     id: welcomePage
@@ -107,7 +109,7 @@ Rectangle {
                 MouseArea {
                     anchors.fill: parent
                     onClicked: {
-                        var component = Qt.createComponent("EditorPage.qml")
+                        var component = Qt.createComponent("EditorWindow.qml")
                         if (component.status === Component.Ready) {
                             var newWindow = component.createObject(appWindow)
                             newWindow.show()
@@ -139,17 +141,31 @@ Rectangle {
                 MouseArea {
                     anchors.fill: parent
                     onClicked: {
-                        var component = Qt.createComponent("EditorPage.qml")
-                        if (component.status === Component.Ready) {
-                            var newWindow = component.createObject(appWindow)
-                            newWindow.show()
-                            appWindow.hide()
-                        }
+                        fileDialog.open()
                     }
                 }
             }
 
         }
 
+    }
+
+    // 文件选择对话框
+    FileDialog {
+        id: fileDialog
+        title: "Open Project"
+        nameFilters: ["Project files (*.project)", "All files (*)"]
+        onAccepted: {
+            var fileUrl = fileDialog.selectedFiles[0]
+            var editorWindow = WindowUtils.openEditorWindow(fileUrl)
+            if (editorWindow && !editorWindow.visible) {
+                console.log("Open Project FileUrl", fileUrl)
+                editorWindow.show()
+                appWindow.hide()
+            }
+        }
+        onRejected: {
+            console.log("File selection canceled")
+        }
     }
 }

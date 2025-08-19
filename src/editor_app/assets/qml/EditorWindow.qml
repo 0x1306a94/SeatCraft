@@ -3,15 +3,19 @@ import QtQuick.Controls
 import QtQuick.Window
 import com.seatcraft.editor
 
-Window {
-    id: editerWindow
+ApplicationWindow {
+    id: editorWindow
     width: 1280
     height: 720
     minimumWidth: 1280
     minimumHeight: 720
+    visible: false
+
+    // 项目路径
+    property url projectFile
 
     StackView {
-        id: editerPageRootStack
+        id: editorPageRootStack
         anchors.fill: parent
 
         SeatCraftEditorCoreView {
@@ -20,7 +24,7 @@ Window {
         }
 
         Rectangle {
-            id: editerPageLeftExpand
+            id: editorPageLeftExpand
             anchors.left: parent.left
             anchors.leftMargin: 20
             anchors.top: parent.top
@@ -38,17 +42,17 @@ Window {
                 anchors.verticalCenter: parent.verticalCenter
                 text: "←"
                 onClicked: {
-                    editerPageLeftPanel.visible = !editerPageLeftPanel.visible
+                    editorPageLeftPanel.visible = !editorPageLeftPanel.visible
                 }
             }
         }
 
         Rectangle {
-            id: editerPageLeftPanel
+            id: editorPageLeftPanel
             anchors.left: parent.left
             anchors.top: parent.top
             anchors.bottom: parent.bottom
-            width: 200 + editerPageLeftExpand.x
+            width: 200 + editorPageLeftExpand.x
             visible: false
             color: '#2c2c2c'
 
@@ -65,13 +69,13 @@ Window {
                 anchors.rightMargin: 10
                 text: "×"
                 onClicked: {
-                    editerPageLeftPanel.visible = false
+                    editorPageLeftPanel.visible = false
                 }
             }
         }
 
         Rectangle {
-            id: editerPageBottomPanel
+            id: editorPageBottomPanel
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.bottom: parent.bottom
             anchors.bottomMargin: 20
@@ -82,7 +86,7 @@ Window {
         }
 
         Rectangle {
-            id: editerPageRightPanel
+            id: editorPageRightPanel
             anchors.right: parent.right
             anchors.top: parent.top
             anchors.bottom: parent.bottom
@@ -93,7 +97,6 @@ Window {
     }
 
     onClosing: {
-        appWindow.show()
-        Qt.callLater(function() { destroy(); })
+        WindowUtils.closeEditorWindow(editorWindow.projectFile)
     }
 }
