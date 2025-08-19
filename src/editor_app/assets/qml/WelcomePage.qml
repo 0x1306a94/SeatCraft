@@ -91,7 +91,7 @@ Rectangle {
                 id: createProject
                 Layout.alignment: Qt.AlignLeading
                 Layout.fillWidth: true
-                height: 40
+                Layout.preferredHeight: 40
                 radius: 10
                 color: '#282828'
 
@@ -123,7 +123,7 @@ Rectangle {
                 id: openProject
                 Layout.alignment: Qt.AlignLeading
                 Layout.fillWidth: true
-                height: 40
+                Layout.preferredHeight: 40
                 radius: 10
                 color: '#282828'
 
