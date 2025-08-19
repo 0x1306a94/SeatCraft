@@ -1,8 +1,9 @@
 import QtQuick
 import QtQuick.Window
 import QtQuick.Controls
+import com.seatcraft.editor
 
-Window {
+ApplicationWindow {
     id: appWindow
     width: 800
     height: 600
@@ -13,6 +14,15 @@ Window {
     visible: true
     flags: Qt.Window | Qt.FramelessWindowHint
     color: "transparent"
+
+    DockHandler {
+        id: dockHandler
+        onDockIconClicked: {
+            if (!appWindow.visible) {
+                appWindow.show()
+            }
+        }
+    }
 
     // 页面加载
     Loader {

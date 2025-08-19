@@ -5,7 +5,10 @@
 #include <QQmlContext>
 #include <QQuickWindow>
 
+#include "event/DockHandler.h"
 #include "view/SeatCraftEditorCoreView.h"
+
+static constexpr char QML_PACKAGE_NAME[] = "com.seatcraft.editor";
 
 int main(int argc, char *argv[]) {
 
@@ -26,7 +29,8 @@ int main(int argc, char *argv[]) {
 
     QApplication app(argc, argv);
 
-    qmlRegisterType<kk::view::SeatCraftEditorCoreView>("SeatCraftEditorCore", 1, 0, "SeatCraftEditorCoreView");
+    qmlRegisterType<kk::view::SeatCraftEditorCoreView>(QML_PACKAGE_NAME, 1, 0, "SeatCraftEditorCoreView");
+    qmlRegisterType<kk::event::DockHandler>(QML_PACKAGE_NAME, 1, 0, "DockHandler");
 
     QQmlApplicationEngine engine;
     engine.loadFromModule("main", "Main");

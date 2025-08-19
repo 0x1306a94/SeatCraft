@@ -69,10 +69,9 @@ qt_standard_project_setup(REQUIRES 6.9)
 add_files_by_extension(EDITOR_SRC_FILES ".h;.hpp;.cpp"
     src
     src/view
+    src/event
     src/renderer
 )
-
-find_package(Qt6 REQUIRED COMPONENTS Quick)
 
 qt_add_executable(${PROJECT_NAME}
     ${EDITOR_SRC_FILES}

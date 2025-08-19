@@ -12,8 +12,8 @@ Rectangle {
     layer.enabled: true
     layer.effect: OpacityMask {
         maskSource: Rectangle {
-            width: welcomePage.width // 动态绑定到 welcomePage 的宽度
-            height: welcomePage.height // 动态绑定到 welcomePage 的高度
+            width: welcomePage.width
+            height: welcomePage.height
             radius: 16
         }
     }
@@ -53,7 +53,8 @@ Rectangle {
             anchors.leftMargin: 10
             text: "×"
             onClicked: {
-                Qt.quit()
+                // Qt.quit()
+                appWindow.hide()
             }
         }
 
