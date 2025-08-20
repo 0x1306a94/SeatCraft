@@ -62,6 +62,8 @@ void UserDesignLayerTree::onDraw(tgfx::Canvas *canvas, const kk::SeatCraftEditor
             venuePath.addRect(venueRect);
             venueLayer->setPath(venuePath);
             venueLayer->addFillStyle(tgfx::SolidColor::Make(tgfx::Color::Green()));
+            venueLayer->addStrokeStyle(tgfx::SolidColor::Make(tgfx::Color::Black()));
+            venueLayer->setLineWidth(2);
             venueLayer->setMatrix(tgfx::Matrix::MakeTrans(300, 300));
 
             tgfx::Path rectPath;

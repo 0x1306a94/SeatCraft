@@ -72,7 +72,9 @@ void SeatCraftEditorCoreView::calculateTransform(float scaleFactor) {
     auto density = _app->density();
 
     float newZoom = std::max(_minimumZoomScale, std::min(_maximumZoomScale, currentZoom * scaleFactor));
-    qDebug() << "wheelEvent (Zoom): scaleFactor " << scaleFactor << " currentZoom " << currentZoom;
+    qDebug() << "wheelEvent (Zoom): scaleFactor " << scaleFactor
+             << " currentZoom " << currentZoom
+             << " newZoom " << newZoom;
 
     float px = static_cast<float>(_mousePosition.x() * density);
     float py = static_cast<float>(_mousePosition.y() * density);
@@ -85,23 +87,47 @@ void SeatCraftEditorCoreView::calculateTransform(float scaleFactor) {
     }
 }
 
-void SeatCraftEditorCoreView::handlePan(float deltaX, float deltaY) {
-    UNUSED_PARAM(deltaX);
-    UNUSED_PARAM(deltaY);
-    update();
+void SeatCraftEditorCoreView::handleNativeGesture(QNativeGestureEvent *event) {
+    Qt::NativeGestureType gestureType = event->gestureType();
+    switch (gestureType) {
+        case Qt::NativeGestureType::BeginNativeGesture: {
+            _mousePosition = event->position();
+            break;
+        }
+        case Qt::NativeGestureType::PanNativeGesture: {
+            break;
+        }
+        case Qt::NativeGestureType::ZoomNativeGesture: {
+            qreal delta = event->value();
+            // 转换成缩放倍数
+            qreal scaleFactor = std::exp(delta);
+            qDebug() << "ZoomNativeGesture: scaleFactor " << scaleFactor;
+            calculateTransform(static_cast<float>(scaleFactor));
+            break;
+        }
+        case Qt::NativeGestureType::EndNativeGesture: {
+            _mousePosition = {0.0, 0.0};
+        }
+        default:
+            break;
+    }
 }
 
-void SeatCraftEditorCoreView::handlePinch(float scale, float centerX, float centerY) {
-    UNUSED_PARAM(scale);
-    UNUSED_PARAM(centerX);
-    UNUSED_PARAM(centerY);
-    update();
+bool SeatCraftEditorCoreView::event(QEvent *event) {
+    if (event->type() == QEvent::NativeGesture) {
+        QNativeGestureEvent *gestureEvent = static_cast<QNativeGestureEvent *>(event);
+        handleNativeGesture(gestureEvent);
+        return true;
+    }
+
+    return QQuickItem::event(event);
 }
 
 void SeatCraftEditorCoreView::mousePressEvent(QMouseEvent *event) {
     event->accept();
     QPointF localPos = event->position();
     _mousePosition = localPos;
+    _translate = localPos;
     //    QPointF scenePos = mapToScene(localPos); // 转换为场景坐标
     //    QPointF globalPos = mapToGlobal(localPos); // 转换为全局坐标
     qDebug() << "mousePressEvent (Local): x" << localPos.x() << "y" << localPos.y();
@@ -110,16 +136,35 @@ void SeatCraftEditorCoreView::mousePressEvent(QMouseEvent *event) {
 void SeatCraftEditorCoreView::mouseMoveEvent(QMouseEvent *event) {
     event->accept();
     QPointF localPos = event->position();
-    qDebug() << "mouseMoveEvent (Local): x" << localPos.x() << "y" << localPos.y();
+    auto currentZoom = _app->zoomScale();
+    tgfx::Point contentOffset = _app->contentOffset();
+    auto density = _app->density();
+
+    float deltaX = static_cast<float>((localPos.x() - _translate.x()) * density * _mouseScrollRatio);
+    float deltaY = static_cast<float>((localPos.y() - _translate.y()) * density * _mouseScrollRatio);
+    qDebug() << "mouseMoveEvent (Local): x" << localPos.x() << "y" << localPos.y()
+             << " deltaX " << deltaX << " deltaY " << deltaY;
+
+    contentOffset.x += deltaX;
+    contentOffset.y += deltaY;
+
+    auto changed = _app->updateZoomAndOffset(currentZoom, contentOffset);
+    if (changed) {
+        update();
+    }
+
+    _translate = localPos;
 }
 
 void SeatCraftEditorCoreView::mouseReleaseEvent(QMouseEvent *event) {
     event->accept();
+    _mousePosition = {0.0, 0.0};
     QPointF localPos = event->position();
     qDebug() << "mouseReleaseEvent (Local): x" << localPos.x() << "y" << localPos.y();
 }
 
 void SeatCraftEditorCoreView::wheelEvent(QWheelEvent *event) {
+    event->accept();
 
     QPointF angleDelta = event->angleDelta();
     auto modifiers = event->modifiers();
@@ -129,7 +174,6 @@ void SeatCraftEditorCoreView::wheelEvent(QWheelEvent *event) {
         float scaleFactor = static_cast<float>(std::exp(angleDelta.y() / _mouseScaleRatio));
         calculateTransform(scaleFactor);
     } else {
-
         auto currentZoom = _app->zoomScale();
         tgfx::Point contentOffset = _app->contentOffset();
         auto density = _app->density();
