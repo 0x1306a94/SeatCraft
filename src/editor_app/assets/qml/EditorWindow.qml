@@ -34,6 +34,11 @@ ApplicationWindow {
             radius: 16
             visible: true
             color: '#2c2c2c'
+            
+            MouseArea {
+                anchors.fill: parent
+                hoverEnabled: true
+            }
 
             Button {
                 id: expandButton
@@ -83,6 +88,11 @@ ApplicationWindow {
             height: 48
             color: '#2c2c2c'
             radius: 16
+            
+            MouseArea {
+                anchors.fill: parent
+                hoverEnabled: true
+            }
         }
 
         Rectangle {

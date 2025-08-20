@@ -10,6 +10,7 @@
 #include <tgfx/platform/Print.h>
 
 #include <QApplication>
+#include <QDebug>
 #include <QFileInfo>
 #include <QQuickWindow>
 #include <QSGImageNode>
@@ -24,6 +25,10 @@ SeatCraftEditorCoreView::SeatCraftEditorCoreView(QQuickItem *parent)
     tgfx::PrintLog("%s", __PRETTY_FUNCTION__);
 
     setFlag(ItemHasContents, true);
+    setAcceptedMouseButtons(Qt::LeftButton);
+    setAcceptHoverEvents(true);
+    setAcceptTouchEvents(true);
+    setFocus(true);
 
     auto backend = std::make_shared<kk::renderer::QTRendererBackend>(this);
     _renderer = std::make_shared<kk::renderer::SeatCraftEditorCoreRenderer>(_app, std::move(backend));
@@ -70,6 +75,36 @@ void SeatCraftEditorCoreView::handlePinch(float scale, float centerX, float cent
     UNUSED_PARAM(centerX);
     UNUSED_PARAM(centerY);
     update();
+}
+
+void SeatCraftEditorCoreView::mousePressEvent(QMouseEvent *event) {
+    event->accept();
+    QPointF localPos = event->position();
+    //    QPointF scenePos = mapToScene(localPos); // 转换为场景坐标
+    //    QPointF globalPos = mapToGlobal(localPos); // 转换为全局坐标
+    qDebug() << "mousePressEvent (Local): x" << localPos.x() << "y" << localPos.y();
+}
+
+void SeatCraftEditorCoreView::mouseMoveEvent(QMouseEvent *event) {
+    event->accept();
+    QPointF localPos = event->position();
+    qDebug() << "mouseMoveEvent (Local): x" << localPos.x() << "y" << localPos.y();
+}
+
+void SeatCraftEditorCoreView::mouseReleaseEvent(QMouseEvent *event) {
+    event->accept();
+    QPointF localPos = event->position();
+    qDebug() << "mouseReleaseEvent (Local): x" << localPos.x() << "y" << localPos.y();
+}
+
+void SeatCraftEditorCoreView::wheelEvent(QWheelEvent *event) {
+    auto modifiers = event->modifiers();
+    auto isZoomMode = (modifiers & Qt::KeyboardModifier::ControlModifier) || (modifiers & Qt::KeyboardModifier::MetaModifier);
+    if (isZoomMode) {
+        QPointF angleDelta = event->angleDelta();
+        auto scaleFactor = std::exp(angleDelta.y() / 300.0f);
+        qDebug() << "wheelEvent (Zoom): scale" << scaleFactor;
+    }
 }
 
 QSGNode *SeatCraftEditorCoreView::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *) {

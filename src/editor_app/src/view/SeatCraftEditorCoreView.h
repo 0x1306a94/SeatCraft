@@ -27,6 +27,10 @@ class SeatCraftEditorCoreView : public QQuickItem {
     Q_INVOKABLE void handlePinch(float scale, float centerX, float centerY);
 
   protected:
+    void mousePressEvent(QMouseEvent *event) override;
+    void mouseMoveEvent(QMouseEvent *event) override;
+    void mouseReleaseEvent(QMouseEvent *event) override;
+    void wheelEvent(QWheelEvent *event) override;
     QSGNode *updatePaintNode(QSGNode *, UpdatePaintNodeData *) override;
 
   private Q_SLOTS:
