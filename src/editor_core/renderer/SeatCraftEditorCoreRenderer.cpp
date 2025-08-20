@@ -8,6 +8,7 @@
 #include <SeatCraftEditorCore/renderer/SeatCraftEditorCoreRenderer.hpp>
 
 #include "drawers/GridBackgroundLayerTree.hpp"
+#include "drawers/UserDesignLayerTree.hpp"
 
 #include <SeatCraft/common/common_macro.h>
 #include <SeatCraftEditorCore/app/SeatCraftEditorCoreApp.hpp>
@@ -24,6 +25,7 @@ SeatCraftEditorCoreRenderer::SeatCraftEditorCoreRenderer(std::shared_ptr<kk::Sea
     : _app(std::move(app))
     , _backend(std::move(backend))
     , _gridLayer(std::make_unique<kk::drawers::GridBackgroundLayerTree>())
+    , _designLayerTree(std::make_unique<kk::drawers::UserDesignLayerTree>())
     , _invalidate(true) {
 
     tgfx::PrintLog("%s", __PRETTY_FUNCTION__);
@@ -105,8 +107,10 @@ void SeatCraftEditorCoreRenderer::draw(bool force) {
 
     auto appPtr = _app.get();
     _gridLayer->prepare(canvas, appPtr, force);
+    _designLayerTree->prepare(canvas, appPtr, force);
 
-    bool hasContentChanged = _gridLayer->hasContentChanged();
+    bool hasContentChanged = _gridLayer->hasContentChanged() ||
+        _designLayerTree->hasContentChanged();
 
     if (!hasContentChanged && !force && !_invalidate) {
         device->unlock();
@@ -117,6 +121,7 @@ void SeatCraftEditorCoreRenderer::draw(bool force) {
     canvas->save();
 
     _gridLayer->draw(canvas, appPtr);
+    _designLayerTree->draw(canvas, appPtr);
 
     canvas->restore();
 

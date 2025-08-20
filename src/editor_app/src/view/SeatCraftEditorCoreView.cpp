@@ -16,6 +16,8 @@
 #include <QSGImageNode>
 #include <QThread>
 
+#include <algorithm>
+
 namespace kk::view {
 
 SeatCraftEditorCoreView::SeatCraftEditorCoreView(QQuickItem *parent)
@@ -64,6 +66,25 @@ void SeatCraftEditorCoreView::invalidateContent() {
     update();
 }
 
+void SeatCraftEditorCoreView::calculateTransform(float scaleFactor) {
+    auto currentZoom = _app->zoomScale();
+    tgfx::Point contentOffset = _app->contentOffset();
+    auto density = _app->density();
+
+    float newZoom = std::max(_minimumZoomScale, std::min(_maximumZoomScale, currentZoom * scaleFactor));
+    qDebug() << "wheelEvent (Zoom): scaleFactor " << scaleFactor << " currentZoom " << currentZoom;
+
+    float px = static_cast<float>(_mousePosition.x() * density);
+    float py = static_cast<float>(_mousePosition.y() * density);
+
+    contentOffset.x = (contentOffset.x - px) * (newZoom / currentZoom) + px;
+    contentOffset.y = (contentOffset.y - py) * (newZoom / currentZoom) + py;
+    auto changed = _app->updateZoomAndOffset(newZoom, contentOffset);
+    if (changed) {
+        update();
+    }
+}
+
 void SeatCraftEditorCoreView::handlePan(float deltaX, float deltaY) {
     UNUSED_PARAM(deltaX);
     UNUSED_PARAM(deltaY);
@@ -80,6 +101,7 @@ void SeatCraftEditorCoreView::handlePinch(float scale, float centerX, float cent
 void SeatCraftEditorCoreView::mousePressEvent(QMouseEvent *event) {
     event->accept();
     QPointF localPos = event->position();
+    _mousePosition = localPos;
     //    QPointF scenePos = mapToScene(localPos); // 转换为场景坐标
     //    QPointF globalPos = mapToGlobal(localPos); // 转换为全局坐标
     qDebug() << "mousePressEvent (Local): x" << localPos.x() << "y" << localPos.y();
@@ -98,12 +120,33 @@ void SeatCraftEditorCoreView::mouseReleaseEvent(QMouseEvent *event) {
 }
 
 void SeatCraftEditorCoreView::wheelEvent(QWheelEvent *event) {
+
+    QPointF angleDelta = event->angleDelta();
     auto modifiers = event->modifiers();
     auto isZoomMode = (modifiers & Qt::KeyboardModifier::ControlModifier) || (modifiers & Qt::KeyboardModifier::MetaModifier);
+    auto isShiftPressed = (modifiers & Qt::KeyboardModifier::ShiftModifier);
     if (isZoomMode) {
-        QPointF angleDelta = event->angleDelta();
-        auto scaleFactor = std::exp(angleDelta.y() / 300.0f);
-        qDebug() << "wheelEvent (Zoom): scale" << scaleFactor;
+        float scaleFactor = static_cast<float>(std::exp(angleDelta.y() / _mouseScaleRatio));
+        calculateTransform(scaleFactor);
+    } else {
+
+        auto currentZoom = _app->zoomScale();
+        tgfx::Point contentOffset = _app->contentOffset();
+        auto density = _app->density();
+
+        float deltaX = static_cast<float>(angleDelta.x() * density * _mouseScrollRatio);
+        float deltaY = static_cast<float>(angleDelta.y() * density * _mouseScrollRatio);
+        if (isShiftPressed && deltaX == 0.0 && deltaY != 0.0) {
+            deltaX = deltaY;
+            deltaY = 0;
+        }
+        contentOffset.x += deltaX;
+        contentOffset.y += deltaY;
+
+        auto changed = _app->updateZoomAndOffset(currentZoom, contentOffset);
+        if (changed) {
+            update();
+        }
     }
 }
 

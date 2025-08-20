@@ -28,6 +28,16 @@ float SeatCraftEditorCoreApp::density() const {
     return _density;
 }
 
+/// 当前缩放比例
+float SeatCraftEditorCoreApp::zoomScale() const {
+    return _zoomScale;
+}
+
+/// 当前滑动偏移
+const tgfx::Point &SeatCraftEditorCoreApp::contentOffset() const {
+    return _contentOffset;
+}
+
 bool SeatCraftEditorCoreApp::updateBounds(const tgfx::Size &boundsSize, float density) {
     if (boundsSize.width <= 0 || boundsSize.height <= 0) {
         tgfx::PrintError("%s width or height is invalid!", __PRETTY_FUNCTION__);
@@ -45,6 +55,15 @@ bool SeatCraftEditorCoreApp::updateBounds(const tgfx::Size &boundsSize, float de
 
     _boundsSize = boundsSize;
     _density = density;
+    return true;
+}
+
+bool SeatCraftEditorCoreApp::updateZoomAndOffset(float zoomScale, const tgfx::Point &contentOffset) {
+    if (zoomScale == _zoomScale && contentOffset == _contentOffset) {
+        return false;
+    }
+    _zoomScale = zoomScale;
+    _contentOffset = contentOffset;
     return true;
 }
 

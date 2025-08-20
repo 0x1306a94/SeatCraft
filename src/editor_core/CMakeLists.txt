@@ -55,6 +55,7 @@ add_files_by_extension(EDITOR_CORE_SRC_FILES ".h;.hpp;.cpp"
 )
 
 add_files_by_extension(EDITOR_CORE_PUBLIC_HEADER_FILES ".h;.hpp"
+    ${SEAT_CRAFT_ROOT_INCLUDE_DIR}/${PROJECT_NAME}/app
     ${SEAT_CRAFT_ROOT_INCLUDE_DIR}/${PROJECT_NAME}/common
     ${SEAT_CRAFT_ROOT_INCLUDE_DIR}/${PROJECT_NAME}/renderer
 )

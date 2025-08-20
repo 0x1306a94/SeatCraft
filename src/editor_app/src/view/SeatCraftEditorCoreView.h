@@ -33,6 +33,9 @@ class SeatCraftEditorCoreView : public QQuickItem {
     void wheelEvent(QWheelEvent *event) override;
     QSGNode *updatePaintNode(QSGNode *, UpdatePaintNodeData *) override;
 
+  private:
+    void calculateTransform(float scaleFactor);
+
   private Q_SLOTS:
     void onBackendWindowCreated();
     void onSceneGraphInvalidated();
@@ -41,6 +44,12 @@ class SeatCraftEditorCoreView : public QQuickItem {
     std::shared_ptr<kk::SeatCraftEditorCoreApp> _app{nullptr};
     std::shared_ptr<kk::renderer::SeatCraftEditorCoreRenderer> _renderer{nullptr};
     bool _connectSceneGraphInvalidated{false};
+    float _minimumZoomScale{0.001f};
+    float _maximumZoomScale{100.0f};
+    float _mouseScaleRatio{300.0f};
+    float _mouseScrollRatio{0.8f};
+    QPointF _translate{0.0f, 0.0f};
+    QPointF _mousePosition{0.0f, 0.0f};
 };
 }  // namespace kk::view
 
