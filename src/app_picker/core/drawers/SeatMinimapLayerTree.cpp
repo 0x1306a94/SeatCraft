@@ -118,6 +118,7 @@ void SeatMinimapLayerTree::updateLineBox(const kk::SeatCraftCoreApp *app) {
         rectWidth = minimapSize.width;
         rectX = _inset.left;
     } else {
+        rectWidth = std::max(16.0f, rectWidth);
         rectX = std::max(_inset.left, std::min(rectX, minimapSize.width - rectWidth + _inset.left));
     }
 
@@ -125,6 +126,7 @@ void SeatMinimapLayerTree::updateLineBox(const kk::SeatCraftCoreApp *app) {
         rectHeight = minimapSize.height;
         rectY = _inset.top;
     } else {
+        rectHeight = std::max(16.0f, rectHeight);
         rectY = std::max(_inset.top, std::min(rectY, minimapSize.height - rectHeight + _inset.top));
     }
 
@@ -209,7 +211,7 @@ std::shared_ptr<tgfx::ShapeLayer> SeatMinimapLayerTree::buildLayerTree(const kk:
 
     _lineBox->setStrokeAlign(tgfx::StrokeAlign::Inside);
     _lineBox->setStrokeStyle(tgfx::SolidColor::Make(tgfx::Color::Red()));
-    _lineBox->setLineWidth(6);
+    _lineBox->setLineWidth(4);
 
     updateLineBox(app);
     root->addChild(_areaLayer);
