@@ -33,6 +33,7 @@ if [ "$INCREMENTAL_BUILD" == "false" ]; then
     -DTGFX_BUILD_SVG=ON \
     -DTGFX_BUILD_LAYERS=ON \
     -DEMSCRIPTEN_PTHREADS=ON \
+    -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
     -DCMAKE_C_FLAGS="-fPIC -pthread -fno-rtti" \
     -DCMAKE_CXX_FLAGS="-fPIC -pthread -fno-rtti" \
     -S $PROJECT_DIR
